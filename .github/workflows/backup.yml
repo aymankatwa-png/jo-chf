@@ -29,6 +29,9 @@ jobs:
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$PII_KEY" ]; then echo "Secrets not set yet. Skipping."; exit 0; fi
           export CLOUDFLARE_ACCOUNT_ID=$(curl -s https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s).result||[];process.stdout.write(r.length?r[0].id:"")})')
           npm install --no-audit --no-fund
+          ID=$(npx wrangler d1 list --json 2>/dev/null | sed -n '/^\[/,$p' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const d=JSON.parse(s||"[]").find(x=>x.name==="jo-chf");process.stdout.write(d?d.uuid:"")})')
+          if [ -z "$ID" ]; then echo "Database not created yet. Skipping."; exit 0; fi
+          sed -i "s/database_id = \".*\"/database_id = \"${ID}\"/" wrangler.toml
           STAMP=$(date -u +%Y-%m-%d)
           npx wrangler d1 export jo-chf --remote --output "jochf-$STAMP.sql"
           gzip "jochf-$STAMP.sql"
