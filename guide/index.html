@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jo-CHF User Guide</title>
+<meta name="description" content="Step-by-step guide for doctors and research staff using the Jo-CHF registry.">
+<link rel="icon" href="../assets/img/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/app.css">
+<script>try { const t = localStorage.getItem('jochf-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { }</script>
+<style>
+  body { background: var(--paper); }
+  .g-top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 12px 28px; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .g-top .brand { padding: 0; }
+  .g-hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+  .g-hero .inner { position: relative; max-width: 1180px; margin: 0 auto; padding: 64px 28px 56px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+  .g-hero h1 { font-size: clamp(38px, 5.4vw, 66px); line-height: .95; letter-spacing: -.04em; font-variation-settings: "wdth" 80; font-weight: 800; }
+  .g-hero p.lead { font-size: 18px; color: var(--ink-2); margin-top: 18px; max-width: 46ch; }
+  .g-hero .row { margin-top: 26px; }
+  .g-hero .shot { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow-3); transform: rotate(-1.2deg); }
+  .g-hero .shot img { display: block; width: 100%; }
+  .g-wrap { max-width: 1180px; margin: 0 auto; padding: 36px 28px 90px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 44px; }
+  .toc { position: sticky; top: 76px; align-self: start; font-size: 14px; max-height: calc(100vh - 100px); overflow: auto; }
+  .toc h4 { font-family: var(--sans); font-size: 12px; color: var(--muted); font-weight: 600; margin: 18px 0 6px; letter-spacing: 0; }
+  .toc a { display: flex; gap: 8px; padding: 5px 8px; border-radius: 8px; text-decoration: none; color: var(--ink-2); }
+  .toc a:hover { background: var(--sunken); color: var(--ink); }
+  .toc a b { color: var(--muted); font-weight: 600; width: 20px; flex: none; font-variant-numeric: tabular-nums; }
+  .part-title { font-size: 30px; letter-spacing: -.025em; font-variation-settings: "wdth" 86; margin: 18px 0 6px; }
+  .part-lead { color: var(--ink-2); max-width: 70ch; margin-bottom: 26px; }
+  .step { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 18px; padding: 30px 0; border-top: 1px solid var(--line); scroll-margin-top: 70px; }
+  .step .n { width: 46px; height: 46px; border-radius: 14px; background: var(--navy); color: var(--on-navy); display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 20px; font-variation-settings: "wdth" 85; }
+  .step h2 { font-size: 24px; margin: 6px 0 10px; letter-spacing: -.02em; }
+  .step p, .step li { max-width: 72ch; color: var(--ink-2); font-size: 16px; line-height: 1.6; }
+  .step p + p { margin-top: 10px; }
+  .step ol, .step ul { padding-left: 20px; margin: 10px 0; }
+  .step li { margin: 6px 0; }
+  .step li b, .step p b { color: var(--ink); }
+  .frame { margin-top: 18px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line-2); box-shadow: var(--shadow-2); background: var(--surface); max-width: 900px; }
+  .frame .bar { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: var(--sunken); border-bottom: 1px solid var(--line); }
+  .frame .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); }
+  .frame img { display: block; width: 100%; height: auto; }
+  .tip { margin-top: 14px; display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--info-bg); font-size: 14.5px; max-width: 72ch; }
+  .tip.warn { background: var(--warn-bg); } .tip.good { background: var(--good-bg); }
+  .tip svg { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+  .legend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 14px; max-width: 900px; }
+  .legend-grid > div { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+  .rules { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 16px; max-width: 900px; }
+  .rule { padding: 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+  .rule b { display: block; font-family: var(--display); font-size: 17px; margin-bottom: 4px; }
+  .rule span { color: var(--ink-2); font-size: 14.5px; }
+  .faq details { border-top: 1px solid var(--line); padding: 14px 0; max-width: 820px; }
+  .faq summary { cursor: pointer; font-weight: 600; font-size: 16px; }
+  .faq details p { margin-top: 8px; color: var(--ink-2); }
+  .demo-card { margin-top: 22px; padding: 22px; border-radius: 18px; background: var(--surface); border: 1px dashed var(--line-2); max-width: 900px; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 15px; margin-top: 10px; }
+  .kv code { font-family: ui-monospace, Menlo, monospace; background: var(--sunken); padding: 1px 6px; border-radius: 6px; }
+  @media (max-width: 920px) { .g-hero .inner { grid-template-columns: 1fr; padding-top: 40px; } .g-wrap { grid-template-columns: 1fr; } .toc { position: static; max-height: none; } .step { grid-template-columns: 1fr; gap: 6px; } .g-top { padding: 10px 16px; } .g-wrap, .g-hero .inner { padding-left: 16px; padding-right: 16px; } }
+  @media print { .g-top, .toc { display: none; } .g-wrap { display: block; } .frame { break-inside: avoid; } .g-hero .shot { display: none; } }
+</style>
+</head>
+<body>
+<header class="g-top">
+  <a class="brand" href="../" style="text-decoration:none"><span class="brand-mark"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M6 36h12l4-10 6 22 6-30 5 18h19" fill="none" stroke="#FF4D5E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><div class="brand-name">Jo-CHF</div><div class="brand-sub">User guide</div></span></a>
+  <span class="grow"></span>
+  <button class="btn ghost sm" onclick="window.print()">Print this guide</button>
+  <a class="btn primary sm" href="../">Open Jo-CHF</a>
+</header>
+
+<section class="g-hero ecg-paper">
+  <div class="inner">
+    <div>
+      <h1>How to use Jo-CHF, step by step</h1>
+      <p class="lead">A short guide for doctors and research staff at each center. It takes about ten minutes to read. You only need a phone, tablet or computer with internet.</p>
+      <div class="row wrap"><a class="btn primary" href="#s1">Start with step 1</a><a class="btn" href="#demo">Try the demo first</a><a class="btn ghost" href="#admin">Guide for administrators</a></div>
+    </div>
+    <div class="shot"><img src="img/03-dashboard.jpg" alt="The Jo-CHF dashboard with the enrollment rhythm strip and center cards" loading="eager"></div>
+  </div>
+</section>
+
+<div class="g-wrap">
+  <nav class="toc" aria-label="Contents">
+    <h4>For site teams</h4>
+    <a href="#s1"><b>1</b>Request your account</a><a href="#s2"><b>2</b>Sign in</a><a href="#s3"><b>3</b>The dashboard</a><a href="#s4"><b>4</b>Your center page</a>
+    <a href="#s5"><b>5</b>Add a new patient</a><a href="#s6"><b>6</b>Fill the record</a><a href="#s7"><b>7</b>Medications</a><a href="#s8"><b>8</b>Mark complete</a>
+    <a href="#s9"><b>9</b>Follow-up visits</a><a href="#s10"><b>10</b>Hospital events</a><a href="#s11"><b>11</b>Death or withdrawal</a><a href="#s12"><b>12</b>Data queries</a>
+    <a href="#s13"><b>13</b>Patient journey</a><a href="#s14"><b>14</b>Analytics</a>
+    <h4>Reference</h4>
+    <a href="#rules"><b>★</b>Golden rules</a><a href="#colors"><b>●</b>Colors and signs</a><a href="#faq"><b>?</b>Questions</a><a href="#demo"><b>▶</b>Demo accounts</a>
+    <h4>For administrators</h4>
+    <a href="#admin"><b>A</b>Administration</a>
+  </nav>
+
+  <main>
+    <h2 class="part-title">For doctors and research staff</h2>
+    <p class="part-lead">Follow these steps in order the first time. After that, use them as a reference. Every screen in Jo-CHF works the same way on a phone at the bedside and on a computer in the clinic.</p>
+
+    <article class="step" id="s1"><div class="n">1</div><div>
+      <h2>Request your account</h2>
+      <ol>
+        <li>Open Jo-CHF and click <b>Request an account</b> under the sign-in button.</li>
+        <li>Write your full name, your <b>username</b> (your email, or a numeric ID given by the study team), your phone, your <b>center</b>, your role and your professional ID.</li>
+        <li>Choose a password: at least <b>8 characters with letters and numbers</b>.</li>
+        <li>Press <b>Send request</b>. An administrator approves your account and confirms your center. Then you can sign in.</li>
+      </ol>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/02-register.jpg" alt="Account request form" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s2"><div class="n">2</div><div>
+      <h2>Sign in</h2>
+      <p>Type your username and password and press <b>Sign in</b>.</p>
+      <ul>
+        <li>For patient privacy, Jo-CHF <b>signs you out after 30 minutes without activity</b>. A thin red line at the top of the screen grows before that happens, and a message warns you 2 minutes before.</li>
+        <li>After <b>5 wrong passwords</b> the account is locked for 15 minutes.</li>
+        <li>Forgot your password? Click <b>Forgot password</b>. An administrator can also give you a temporary password; you then choose a new one.</li>
+      </ul>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/01-login.jpg" alt="Sign-in page with the live ECG trace" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s3"><div class="n">3</div><div>
+      <h2>The dashboard</h2>
+      <p>The first screen shows the whole registry. The big number is the total enrolled against the target of 1,000 patients. The red <b>rhythm strip</b> shows enrollment: <b>each heartbeat is one month</b>, and a taller beat means more patients enrolled that month.</p>
+      <p>Below, there is one card per center with recruitment against target, follow-up completion at 30 days, 6 months and 12 months, data completeness and overdue visits. <b>Your center has a red ring and a dark border.</b> You can open only your own center; other centers show summary numbers.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/03-dashboard.jpg" alt="Dashboard" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s4"><div class="n">4</div><div>
+      <h2>Your center page</h2>
+      <p>Click your center card, or <b>My center</b> in the menu. Here you see:</p>
+      <ul>
+        <li><b>Follow-ups due</b>: patients whose visit window is open, opens within 7 days, or was missed.</li>
+        <li><b>Data queries</b> from the coordinating team.</li>
+        <li><b>Patients</b>: search by Study ID, name or file number. Click a column title to sort. Click a row to open the patient.</li>
+      </ul>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/04-center.jpg" alt="Center page with follow-ups due and patient list" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s5"><div class="n">5</div><div>
+      <h2>Add a new patient</h2>
+      <ol>
+        <li>Press <b>Add new patient</b>.</li>
+        <li>Enter the dates. Write dates as <b>DD/MM/YYYY</b> (the slashes appear by themselves) or use the calendar button.</li>
+        <li><b>The consent date is required.</b> Enrollment is blocked without signed consent.</li>
+        <li>Tick all three <b>inclusion</b> criteria. If any <b>exclusion</b> criterion is ticked, the system stops enrollment.</li>
+        <li>Choose <b>inpatient</b> or <b>outpatient</b>.</li>
+        <li>Enter the patient's <b>identifiers</b>: name, phones, hospital file number and (optional) national ID. These are encrypted and only your center can see them.</li>
+        <li>Press <b>Enroll patient</b>. The Study ID is created automatically, for example <b>AMM01-0001</b>.</li>
+      </ol>
+      <div class="tip warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.5"/></svg><div>If you see <b>Possible duplicate</b>, a patient with the same national ID or file number is already in the registry (at any center). Check before continuing. A patient can be enrolled only once.</div></div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/05-new-patient.jpg" alt="New patient form" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s6"><div class="n">6</div><div>
+      <h2>Fill the patient record</h2>
+      <p>The record is split into tabs on the left: Enrollment, Identifiers, Demographics, Presentation, Etiology, Investigations, KCCQ-12, Medications, Devices and Index admission (inpatients only). <b>Fill them in any order, over several days if needed.</b></p>
+      <ul>
+        <li>A <b>green tick</b> on a tab means its required fields are done. A <b>red number</b> shows how many required fields are still empty.</li>
+        <li>Required fields have a red star. If a test was not done or the answer is unknown, press <b>Not done</b> or <b>Unknown</b> next to the field name.</li>
+        <li>Age, BMI, eGFR (CKD-EPI 2021), HF phenotype and QRS category are <b>calculated automatically</b>.</li>
+        <li>For lab values, <b>choose the unit your lab uses</b> (for example creatinine in mg/dL or µmol/L). The system converts it.</li>
+        <li>Impossible values are blocked (for example LVEF 95%). Unusual values show a yellow warning so you can double-check.</li>
+      </ul>
+      <div class="tip good"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><b>Your work is never lost.</b> Every change is kept on your device straight away and saved to the server automatically a few seconds after you stop typing. The bar at the bottom says <b>All changes saved</b> when it is done. You can also press <b>Save</b> at any time.</div></div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/06-record.jpg" alt="Patient record with tabs" loading="lazy"></div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/07-labs.jpg" alt="Laboratory section with unit choice" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s7"><div class="n">7</div><div>
+      <h2>Medications</h2>
+      <p>In the <b>Medications</b> tab, record every heart failure medicine at this time point.</p>
+      <ol>
+        <li>For each class (ARNI/ACEi/ARB, beta-blocker, MRA, SGLT2 inhibitor) use <b>+ Add drug</b> and choose the drug.</li>
+        <li>Enter the <b>dose each time</b> in mg and <b>how often</b>. The bar shows the <b>% of the guideline target dose</b> automatically.</li>
+        <li>If a class is <b>not prescribed</b>, or the dose is <b>below target</b>, choose the reason (hypotension, hyperkalemia, cost, titration in progress…).</li>
+        <li>Tick <b>All heart failure medicines at this time point are recorded</b>, even if the patient takes none.</li>
+      </ol>
+      <p>Between visits, use <b>Log a medication change</b> (start, increase, decrease, stop, switch). The next visit's medication list is pre-filled from this log, so you enter things only once.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/08-meds.jpg" alt="Medication editor with dose-to-target bars and reasons" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s8"><div class="n">8</div><div>
+      <h2>Mark the record complete</h2>
+      <p>When the baseline data are entered, press <b>Mark complete</b> at the top. If something is missing, a list appears. <b>Click any item to jump to it.</b></p>
+      <p>After a record is complete, every change asks for a <b>reason</b>. This is saved in the change history (audit trail).</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/13-complete.jpg" alt="List of missing items" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s9"><div class="n">9</div><div>
+      <h2>Follow-up visits</h2>
+      <p>Jo-CHF calculates each visit window from the enrollment date:</p>
+      <div class="legend-grid"><div><b>30 days</b>&nbsp;day 23–37 · phone or clinic</div><div><b>6 months</b>&nbsp;day 150–210 · clinic preferred</div><div><b>12 months</b>&nbsp;day 335–395 · clinic preferred</div></div>
+      <ol style="margin-top:16px">
+        <li>Open <b>Follow-ups</b> in the menu, or the patient's <b>Follow-up</b> tab.</li>
+        <li>Press <b>Enter visit</b>. Fill date, method and vital status. For alive patients, check the medicines (already pre-filled), adherence, side effects, labs if available, and KCCQ-12 at 6 and 12 months.</li>
+        <li>Could not reach the patient? Press <b>Log call</b> for every attempt (date, time, number, outcome).</li>
+        <li>After <b>3 unsuccessful calls on different days</b>, <b>Mark lost</b> appears. Then check vital status in the hospital records. You can still reach the patient at the next window.</li>
+      </ol>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/09-followup.jpg" alt="Follow-up tab with three visit cards" loading="lazy"></div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/10-visit.jpg" alt="Visit form with pre-filled medications" loading="lazy"></div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/11-call.jpg" alt="Logging a contact attempt" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s10"><div class="n">10</div><div>
+      <h2>Hospital admissions and urgent visits</h2>
+      <p>In the <b>Events</b> tab, press <b>Add event</b> for each hospital admission, and for each urgent or emergency visit for worsening HF treated with IV diuretics without admission.</p>
+      <p>The system decides automatically if an admission is an <b>HF hospitalization</b>: unplanned, 24 hours or longer, HF as the main reason, and IV diuretics, vasoactive therapy or mechanical support.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/12-event.jpg" alt="Event form" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s11"><div class="n">11</div><div>
+      <h2>Death or withdrawal of consent</h2>
+      <p>If the patient died, open <b>Death &amp; withdrawal</b> and press <b>Record death</b> (date, place, source and cause). This also opens automatically if you choose "Dead" at a follow-up or "In-hospital death". Future visits are cancelled automatically.</p>
+      <p>If the patient withdraws consent, record the date and whether data already collected can be kept.</p>
+    </div></article>
+
+    <article class="step" id="s12"><div class="n">12</div><div>
+      <h2>Answer data queries</h2>
+      <p>The coordinating team may ask about a value (for example "Potassium 6.4 on MRA, please confirm"). You see a red number next to <b>Data queries</b> and a yellow note on the field itself.</p>
+      <ol><li>Open the query.</li><li>Check the source document and correct the value in the record if needed.</li><li>Press <b>Reply</b> and say what you did.</li></ol>
+      <p>Only administrators can delete records. If a record was created by mistake, use the trash button in the patient header to <b>request deletion</b> with a reason.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/15-queries.jpg" alt="Data queries list" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s13"><div class="n">13</div><div>
+      <h2>Patient journey and care opportunities</h2>
+      <p>The <b>Patient journey</b> tab shows the whole year on one line: visits, admissions, the four foundational drug classes (darker bar = closer to target dose) and the KCCQ score.</p>
+      <p><b>Guideline care opportunities</b> are automatic reminders compared with ESC guidance, for example "SGLT2i not prescribed" or "iron deficiency without IV iron". <b>They support your review; you decide.</b></p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/14-journey.jpg" alt="Patient journey timeline" loading="lazy"></div>
+    </div></article>
+
+    <article class="step" id="s14"><div class="n">14</div><div>
+      <h2>Analytics</h2>
+      <p><b>Analytics</b> in the menu shows live results for your center: patient profile, drug uptake and titration over time, survival curves, hospitalizations, KCCQ, labs and devices. Use the filters at the top (phenotype, setting, sex). Every chart has a button to see the numbers as a table and to save it as an image.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/17-analytics.jpg" alt="Analytics page" loading="lazy"></div>
+    </div></article>
+
+    <section id="rules" style="padding-top:30px;border-top:1px solid var(--line)">
+      <h2 class="part-title">Golden rules</h2>
+      <div class="rules">
+        <div class="rule"><b>Consent first</b><span>Never enroll without signed written consent and its date.</span></div>
+        <div class="rule"><b>Names only in Identifiers</b><span>Never write names, phones or file numbers in notes or free-text fields.</span></div>
+        <div class="rule"><b>Use Not done / Unknown</b><span>Do not leave required fields empty and do not guess values.</span></div>
+        <div class="rule"><b>Check the unit</b><span>Pick the lab unit shown on the lab report before typing the value.</span></div>
+        <div class="rule"><b>Visit inside the window</b><span>Watch the Follow-ups list every week. Call early in the window.</span></div>
+        <div class="rule"><b>Sign out on shared computers</b><span>Use Sign out at the top right when you leave a shared computer.</span></div>
+      </div>
+    </section>
+
+    <section id="colors" style="padding-top:34px">
+      <h2 class="part-title">Colors and signs</h2>
+      <div class="legend-grid">
+        <div><span class="badge good">Window open</span>Visit can be done now</div>
+        <div><span class="badge info">Opens soon</span>Within the next 7 days</div>
+        <div><span class="badge bad">Missed</span>Window closed, not done</div>
+        <div><span class="badge warn">Incomplete</span>Required data still missing</div>
+        <div><span class="badge good">Complete</span>Baseline record finished</div>
+        <div><span class="badge ink">Locked</span>Cleaned and locked by admin</div>
+        <div><span class="pheno HFrEF">HFrEF</span>LVEF below 50%</div>
+        <div><span class="pheno HFpEF">HFpEF</span>LVEF 50% or above</div>
+        <div><span class="fmt-pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>3 of 4 foundational drugs</div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq" style="padding-top:34px">
+      <h2 class="part-title">Questions</h2>
+      <details><summary>The internet stopped while I was typing. Is my data lost?</summary><p>No. Changes are kept on your device. When the connection is back, open the patient again and press Save. If you closed the page, Jo-CHF offers to restore your unsaved changes.</p></details>
+      <details><summary>Can I see patients from another center?</summary><p>No. You can only open records of your own center. For other centers you see the summary numbers on the dashboard.</p></details>
+      <details><summary>Can administrators see my patients' names?</summary><p>No. Names, phone numbers, file numbers and national IDs are encrypted and visible only to your center. Administrators see only the Study ID. Exports never include identifiers.</p></details>
+      <details><summary>I made a mistake in a completed record.</summary><p>Correct it and give a short reason when asked. The old and new values are kept in the change history.</p></details>
+      <details><summary>Can I use my phone?</summary><p>Yes. Jo-CHF works in the browser of any phone or tablet. You can also add it to your home screen from the browser menu.</p></details>
+      <details><summary>Who do I contact for help?</summary><p>Contact the study administrators (Dr. Imad, Dr. Ayman, Sofian Zreigh).</p></details>
+    </section>
+
+    <section id="demo" style="padding-top:34px">
+      <h2 class="part-title">Try the demo first</h2>
+      <p class="part-lead">The demo is a full copy of Jo-CHF with more than 500 invented patients across 12 centers. It runs only in your browser: nothing is sent anywhere, and you can reset it any time. Use it for training before entering real patients.</p>
+      <div class="demo-card">
+        <p>On the sign-in page, press <b>Explore the demo</b>, then one of the buttons, or sign in with:</p>
+        <div class="kv"><span>Administrator</span><span><code>admin@demo</code> · password <code>demo1234</code></span><span>Site investigator (Amman 01)</span><span><code>amm01@demo</code> · password <code>demo1234</code></span><span>Other centers</span><span><code>irb01@demo</code>, <code>zrq01@demo</code>, <code>krk01@demo</code> … · password <code>demo1234</code></span></div>
+        <p style="margin-top:14px"><a class="btn primary" href="../">Open Jo-CHF</a></p>
+      </div>
+    </section>
+
+    <h2 class="part-title" id="admin" style="margin-top:56px;padding-top:30px;border-top:2px solid var(--ink);scroll-margin-top:70px">For administrators</h2>
+    <p class="part-lead">Administrators (the principal investigators and the coordinator) see all centers with de-identified data, approve accounts, check data quality and export the dataset.</p>
+
+    <article class="step" id="a1"><div class="n">A1</div><div>
+      <h2>Approve accounts</h2>
+      <p>Open <b>Users</b>. New requests are at the top. Press <b>Approve</b>, confirm the role and the center, and press <b>Approve and activate</b>. Use <b>Deactivate</b> when someone leaves a center: their data stay. The refresh button gives a <b>temporary password</b> if someone forgets theirs.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/20-approve.jpg" alt="Approving an account" loading="lazy"></div>
+    </div></article>
+    <article class="step" id="a2"><div class="n">A2</div><div>
+      <h2>Centers, targets and study settings</h2>
+      <p>In <b>Centers &amp; targets</b>, add each center with its code (the start of every Study ID) and its recruitment target. In <b>Study settings</b>, choose whether follow-up windows for inpatients start at enrollment or discharge, check the <b>target doses</b> against the final ESC 2026 tables, and paste the licensed Arabic KCCQ-12 wording once the license is confirmed.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/21-settings.jpg" alt="Study settings" loading="lazy"></div>
+    </div></article>
+    <article class="step" id="a3"><div class="n">A3</div><div>
+      <h2>Data quality: queries, locking and adjudication</h2>
+      <p>Open any patient and use <b>Data queries → Raise a query</b> on a field. The site sees it, answers and corrects. Close the query when it is resolved. After cleaning, press <b>Lock</b> in the patient header so no more changes can be made. In <b>Death &amp; withdrawal</b>, press <b>Adjudicate</b> to confirm or change the cause of death; both versions are kept.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/23-query.jpg" alt="Raising a data query" loading="lazy"></div>
+    </div></article>
+    <article class="step" id="a4"><div class="n">A4</div><div>
+      <h2>Export and audit</h2>
+      <p><b>Export data</b> creates Excel, CSV, SPSS or R files with a data dictionary. Exports are always de-identified, and dates can be exported as days from enrollment. The <b>Audit log</b> shows every sign-in, change and deletion with old and new values. It cannot be edited by anyone.</p>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/22-export.jpg" alt="Export page" loading="lazy"></div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="img/24-audit.jpg" alt="Audit log" loading="lazy"></div>
+    </div></article>
+  </main>
+</div>
+</body>
+</html>

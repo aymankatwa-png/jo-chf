@@ -1,0 +1,108 @@
+# Deploys the Jo-CHF backend (Cloudflare Worker + D1 database).
+# Runs when something in worker/ or assets/js/core/ changes, or when you press "Run workflow".
+#
+# Repository secrets needed (Settings → Secrets and variables → Actions → New repository secret):
+#   CLOUDFLARE_API_TOKEN   Cloudflare API token with "Workers Scripts: Edit" and "D1: Edit"
+#   CLOUDFLARE_ACCOUNT_ID  Your Cloudflare account ID
+#   PII_KEY                Long random text. Encrypts patient identifiers. NEVER change or lose it.
+# Optional:
+#   BREVO_API_KEY          To send password-reset emails (also set MAIL_FROM in worker/wrangler.toml)
+name: Deploy backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["worker/**", "assets/js/core/**", ".github/workflows/deploy-backend.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check secrets
+        env:
+          T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          K: ${{ secrets.PII_KEY }}
+        run: |
+          missing=""
+          [ -z "$T" ] && missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -z "$A" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          [ -z "$K" ] && missing="$missing PII_KEY"
+          if [ -n "$missing" ]; then echo "::error::Missing repository secrets:$missing. See SETUP.md."; exit 1; fi
+          if [ ${#K} -lt 24 ]; then echo "::error::PII_KEY must be at least 24 characters."; exit 1; fi
+
+      - name: Install wrangler
+        run: npm install --no-audit --no-fund
+
+      - name: Create the database if it does not exist, and insert its ID
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          ID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s);const d=l.find(x=>x.name==="jo-chf");process.stdout.write(d?d.uuid:"")})')
+          if [ -z "$ID" ]; then
+            echo "Creating D1 database jo-chf"
+            npx wrangler d1 create jo-chf
+            ID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s);process.stdout.write(l.find(x=>x.name==="jo-chf").uuid)})')
+          fi
+          echo "Database ID: $ID"
+          sed -i "s/database_id = \".*\"/database_id = \"${ID}\"/" wrangler.toml
+
+      - name: Create tables (safe to run every time)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler d1 execute jo-chf --remote --file=schema.sql -y
+
+      - name: Deploy worker and secrets
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PII_KEY: ${{ secrets.PII_KEY }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: |
+          set -e
+          npx wrangler deploy | tee deploy.log
+          printf '%s' "$PII_KEY" | npx wrangler secret put PII_KEY
+          if [ -n "$BREVO_API_KEY" ]; then printf '%s' "$BREVO_API_KEY" | npx wrangler secret put BREVO_API_KEY; fi
+          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "### Backend deployed: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -fsS "${{ steps.deploy.outputs.url }}/health"
+
+      - name: Point the website at the backend (config.js)
+        working-directory: .
+        run: |
+          URL="${{ steps.deploy.outputs.url }}"
+          [ -z "$URL" ] && exit 0
+          if ! grep -q "API_URL: '$URL'" config.js; then
+            sed -i "s#API_URL: '[^']*'#API_URL: '$URL'#" config.js
+            git config user.name "jo-chf-deploy"
+            git config user.email "actions@users.noreply.github.com"
+            git add config.js
+            git commit -m "Connect website to backend at $URL"
+            git push
+          fi

@@ -1,0 +1,12 @@
+{
+  "name": "jo-chf-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --var ALLOW_LOCALHOST:1",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.40.0"
+  }
+}
