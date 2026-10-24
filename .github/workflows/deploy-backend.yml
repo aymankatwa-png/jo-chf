@@ -48,6 +48,20 @@ jobs:
           if [ -n "$missing" ]; then echo "::error::Missing repository secrets:$missing. See SETUP.md."; exit 1; fi
           if [ ${#K} -lt 24 ]; then echo "::error::PII_KEY must be at least 24 characters."; exit 1; fi
 
+      - name: Check the Cloudflare key
+        env:
+          T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Key length: ${#T} characters (starts with ${T:0:5})"
+          echo "Account ID length: ${#A}"
+          echo "--- token verify ---"
+          curl -s https://api.cloudflare.com/client/v4/user/tokens/verify -H "Authorization: Bearer $T" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log("success:",j.success,"status:",j.result&&j.result.status,"errors:",JSON.stringify(j.errors))})'
+          echo "--- accounts this key can use ---"
+          curl -s https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $T" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);(j.result||[]).forEach(a=>console.log(a.name,"=",a.id));if(!j.success)console.log(JSON.stringify(j.errors))})'
+          echo "--- account id secret matches one of them? ---"
+          curl -s https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $T" | A="$A" node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log((j.result||[]).some(a=>a.id===process.env.A)?"YES":"NO")})'
+
       - name: Install wrangler
         run: npm install --no-audit --no-fund
 
@@ -57,11 +71,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -e
-          ID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s);const d=l.find(x=>x.name==="jo-chf");process.stdout.write(d?d.uuid:"")})')
+          ID=$(npx wrangler d1 list --json 2>/dev/null | sed -n '/^\[/,$p' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s);const d=l.find(x=>x.name==="jo-chf");process.stdout.write(d?d.uuid:"")})')
           if [ -z "$ID" ]; then
             echo "Creating D1 database jo-chf"
             npx wrangler d1 create jo-chf
-            ID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s);process.stdout.write(l.find(x=>x.name==="jo-chf").uuid)})')
+            ID=$(npx wrangler d1 list --json 2>/dev/null | sed -n '/^\[/,$p' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s);process.stdout.write(l.find(x=>x.name==="jo-chf").uuid)})')
           fi
           echo "Database ID: $ID"
           sed -i "s/database_id = \".*\"/database_id = \"${ID}\"/" wrangler.toml
