@@ -38,7 +38,7 @@ jobs:
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "jochf-$STAMP.sql.gz" -out "jochf-$STAMP.sql.gz.enc" -pass env:PII_KEY
           rm "jochf-$STAMP.sql.gz"
           echo "STAMP=$STAMP" >> "$GITHUB_ENV"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: jochf-backup-${{ env.STAMP }}
           path: worker/jochf-*.sql.gz.enc
