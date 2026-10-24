@@ -188,7 +188,7 @@ export function computeAll(ds, filt = {}) {
     kpi: {
       medianAge: median(ages), iqr: [q(ages, .25), q(ages, .75)], female: pct(rows.filter(r => r.sex === 'F').length, n),
       hfref: pct(hfref.length, n), inpatient: pct(rows.filter(r => r.setting === 'inpatient').length, n),
-      mort12: m12 ? Math.round((1 - m12.s) * 1000) / 10 : null, mort12ci: m12 ? [Math.round((1 - m12.hi) * 1000) / 10, Math.round((1 - m12.lo) * 1000) / 10] : null,
+      mort12: n && m12 ? Math.round((1 - m12.s) * 1000) / 10 : null, mort12ci: n && m12 ? [Math.round((1 - m12.hi) * 1000) / 10, Math.round((1 - m12.lo) * 1000) / 10] : null,
       hfhRate: py ? Math.round(1000 * hfhTotal / py) / 10 : null, py: Math.round(py),
       quadNow: pct(hfref.filter(r => r.cur.count === 4).length, hfref.length), quadBase: pct(hfref.filter(r => r.gd.baseline?.count === 4).length, hfref.length),
       kccqBase: kccq[0].summary, kccqChange, improved5, smokingCur, deaths: deaths.length, cvDeaths, inHospMort, medianLos: median(los),

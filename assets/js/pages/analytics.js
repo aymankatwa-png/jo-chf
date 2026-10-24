@@ -51,6 +51,11 @@ export async function render(root, _, app) {
   }
 
   function drawSections() {
+    if (!A.n) {
+      charts.forEach(c => c.dispose()); charts.clear();
+      root.querySelector('#sections').innerHTML = `<div class="card empty" style="margin-top:18px">${icon('chart')}<h3>${ds.patients.length ? 'No patients match these filters' : 'No patients yet'}</h3><p>${ds.patients.length ? 'Change the filters above to see the charts.' : 'Charts and statistics appear here automatically as soon as the centers enter their first patients. To see a full example now, open the demo from the sign-in page.'}</p></div>`;
+      return;
+    }
     const secs = [
       ['who', 'Who is in the registry', 'Baseline profile of enrolled patients.'],
       ['gdmt', 'Guideline-directed medical therapy', 'Uptake and titration of foundational drugs in HFrEF, over time.'],
