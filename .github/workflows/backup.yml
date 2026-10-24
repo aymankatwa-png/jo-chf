@@ -22,12 +22,12 @@ jobs:
       - name: Export and encrypt
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PII_KEY: ${{ secrets.PII_KEY }}
         working-directory: worker
         run: |
           set -e
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$PII_KEY" ]; then echo "Secrets not set yet. Skipping."; exit 0; fi
+          export CLOUDFLARE_ACCOUNT_ID=$(curl -s https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s).result||[];process.stdout.write(r.length?r[0].id:"")})')
           npm install --no-audit --no-fund
           STAMP=$(date -u +%Y-%m-%d)
           npx wrangler d1 export jo-chf --remote --output "jochf-$STAMP.sql"

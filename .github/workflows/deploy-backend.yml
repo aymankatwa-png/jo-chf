@@ -38,29 +38,30 @@ jobs:
       - name: Check secrets
         env:
           T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           K: ${{ secrets.PII_KEY }}
         run: |
           missing=""
           [ -z "$T" ] && missing="$missing CLOUDFLARE_API_TOKEN"
-          [ -z "$A" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
           [ -z "$K" ] && missing="$missing PII_KEY"
           if [ -n "$missing" ]; then echo "::error::Missing repository secrets:$missing. See SETUP.md."; exit 1; fi
           if [ ${#K} -lt 24 ]; then echo "::error::PII_KEY must be at least 24 characters."; exit 1; fi
 
-      - name: Check the Cloudflare key
+      - name: Check the Cloudflare key and find the account
         env:
           T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "Key length: ${#T} characters (starts with ${T:0:5})"
-          echo "Account ID length: ${#A}"
-          echo "--- token verify ---"
-          curl -s https://api.cloudflare.com/client/v4/user/tokens/verify -H "Authorization: Bearer $T" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log("success:",j.success,"status:",j.result&&j.result.status,"errors:",JSON.stringify(j.errors))})'
-          echo "--- accounts this key can use ---"
-          curl -s https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $T" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);(j.result||[]).forEach(a=>console.log(a.name,"=",a.id));if(!j.success)console.log(JSON.stringify(j.errors))})'
-          echo "--- account id secret matches one of them? ---"
-          curl -s https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $T" | A="$A" node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log((j.result||[]).some(a=>a.id===process.env.A)?"YES":"NO")})'
+          OK=$(curl -s https://api.cloudflare.com/client/v4/user/tokens/verify -H "Authorization: Bearer $T" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{process.stdout.write(String(JSON.parse(s).success))})')
+          if [ "$OK" != "true" ]; then echo "::error::The CLOUDFLARE_API_TOKEN secret is not a valid Cloudflare token."; exit 1; fi
+          IDS=$(curl -s https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $T" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{process.stdout.write((JSON.parse(s).result||[]).map(a=>a.id).join(" "))})')
+          ACC=""
+          for id in $IDS; do [ "$id" = "$A" ] && ACC="$id"; done
+          if [ -z "$ACC" ]; then
+            set -- $IDS
+            if [ "$#" = "1" ]; then ACC="$1"; echo "Using the only account this key can see."; else echo "::error::Set CLOUDFLARE_ACCOUNT_ID to one of: $IDS"; exit 1; fi
+          fi
+          echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> "$GITHUB_ENV"
+          echo "Key OK. Account found."
 
       - name: Install wrangler
         run: npm install --no-audit --no-fund
@@ -68,14 +69,13 @@ jobs:
       - name: Create the database if it does not exist, and insert its ID
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -e
-          ID=$(npx wrangler d1 list --json 2>/dev/null | sed -n '/^\[/,$p' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s);const d=l.find(x=>x.name==="jo-chf");process.stdout.write(d?d.uuid:"")})')
+          ID=$(npx wrangler d1 list --json 2>/dev/null | sed -n '/^\[/,$p' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s||"[]");const d=l.find(x=>x.name==="jo-chf");process.stdout.write(d?d.uuid:"")})')
           if [ -z "$ID" ]; then
             echo "Creating D1 database jo-chf"
             npx wrangler d1 create jo-chf
-            ID=$(npx wrangler d1 list --json 2>/dev/null | sed -n '/^\[/,$p' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s);process.stdout.write(l.find(x=>x.name==="jo-chf").uuid)})')
+            ID=$(npx wrangler d1 list --json 2>/dev/null | sed -n '/^\[/,$p' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s||"[]");process.stdout.write(l.find(x=>x.name==="jo-chf").uuid)})')
           fi
           echo "Database ID: $ID"
           sed -i "s/database_id = \".*\"/database_id = \"${ID}\"/" wrangler.toml
@@ -83,14 +83,12 @@ jobs:
       - name: Create tables (safe to run every time)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler d1 execute jo-chf --remote --file=schema.sql -y
 
       - name: Deploy worker and secrets
         id: deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PII_KEY: ${{ secrets.PII_KEY }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: |
