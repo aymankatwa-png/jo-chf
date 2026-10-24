@@ -106,7 +106,10 @@ export async function render(root, { name, params }, app) {
         const un = $('#u', card).value.trim();
         try {
           await call('auth.register', { name: $('#n', card).value, username: un, email: un.includes('@') ? un : '', phone: $('#ph', card).value, centerId: $('#c', card).value, role: $('#r', card).value, professionalId: $('#pid', card).value, password: $('#p', card).value });
-          card.innerHTML = `<div class="callout good">${icon('check')}<div><b>Request sent.</b> An administrator will approve your account and assign your center. Then sign in with the username and password you chose.</div></div><p style="margin-top:18px"><a class="btn primary" href="#/login">Back to sign in</a></p>`;
+          card.innerHTML = `<div class="callout good">${icon('check')}<div><b>Request sent.</b> An administrator will approve your account and assign your center. Then sign in with the username and password you chose.</div></div>
+            ${meta.mail && un.includes('@') ? `<div class="callout" style="margin-top:12px">${icon('info')}<div><b>Check your email.</b> We sent a link to <b>${esc(un)}</b> to confirm your address. Look in the spam folder too. <button class="linkbtn" id="resend">Send it again</button></div></div>` : ''}
+            <p style="margin-top:18px"><a class="btn primary" href="#/login">Back to sign in</a></p>`;
+          card.querySelector('#resend')?.addEventListener('click', async () => { await call('auth.resendVerify', { username: un }).catch(() => { }); toast('Confirmation email sent again.'); });
         } catch (err) { showErr(card, err.message); busy(btn, false); }
       };
     },
@@ -135,6 +138,15 @@ export async function render(root, { name, params }, app) {
         catch (err) { showErr(card, err.message); busy(btn, false); }
       };
     },
+    async verify() {
+      card.innerHTML = `<h2>Confirming your email…</h2><p class="lead">One moment.</p>`;
+      try {
+        const r = await call('auth.verifyEmail', { token: params[0] });
+        card.innerHTML = `<div class="callout good">${icon('check')}<div><b>Email confirmed.</b> Thank you. ${r.status === 'pending' ? 'An administrator will approve your account soon; you will get an email when it is active.' : 'You can sign in now.'}</div></div><p style="margin-top:18px"><a class="btn primary" href="#/login">Go to sign in</a></p>`;
+      } catch (e) {
+        card.innerHTML = `<div class="callout bad">${icon('alert')}<div>${esc(e.message)}</div></div><p style="margin-top:18px"><a class="btn" href="#/login">Go to sign in</a></p>`;
+      }
+    },
     setup() {
       if (!meta.needsSetup) { location.hash = '#/login'; return; }
       card.innerHTML = `<h2>Welcome. Create the first administrator</h2><p class="lead">This screen appears only once, while the registry has no administrator. After this, everyone else requests an account and you approve them.</p>
@@ -147,7 +159,7 @@ export async function render(root, { name, params }, app) {
       $('#f', card).onsubmit = async e => {
         e.preventDefault(); if ($('#p', card).value !== $('#p2', card).value) return showErr(card, 'The two passwords are not the same.');
         const btn = e.target.querySelector('button'); busy(btn, true);
-        try { await call('setup.createAdmin', { name: $('#n', card).value, username: $('#u', card).value, password: $('#p', card).value }); toast('Administrator created. Please sign in.'); location.hash = '#/login'; }
+        try { const r = await call('setup.createAdmin', { name: $('#n', card).value, username: $('#u', card).value, password: $('#p', card).value }); toast(r.mail ? 'Administrator created. Check your email to confirm it, then sign in.' : 'Administrator created. Please sign in.', 'ok', 6000); location.hash = '#/login'; }
         catch (err) { showErr(card, err.message); busy(btn, false); }
       };
     },

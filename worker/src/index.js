@@ -30,10 +30,10 @@ const json = (data, status, cors) => new Response(JSON.stringify(data), { status
 function mailer(env) {
   if (!env.BREVO_API_KEY || !env.MAIL_FROM) return null;
   return {
-    async send({ to, name, subject, text }) {
+    async send({ to, name, subject, text, html }) {
       const r = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST', headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: { email: env.MAIL_FROM, name: env.MAIL_FROM_NAME || 'Jo-CHF Registry' }, to: [{ email: to, name }], subject, textContent: text }),
+        body: JSON.stringify({ sender: { email: env.MAIL_FROM, name: env.MAIL_FROM_NAME || 'Jo-CHF Registry' }, to: [{ email: to, name }], subject, textContent: text, ...(html ? { htmlContent: html } : {}) }),
       });
       if (!r.ok) console.log('mail failed', r.status);
     },
@@ -62,7 +62,7 @@ export default {
 
     const method = m[1];
     const ip = req.headers.get('CF-Connecting-IP') || 'local';
-    if (['auth.login', 'auth.register', 'auth.forgot', 'setup.createAdmin'].includes(method) && rateLimited(ip, method, 20, 10 * 60 * 1000))
+    if (['auth.login', 'auth.register', 'auth.forgot', 'auth.resendVerify', 'auth.verifyEmail', 'setup.createAdmin'].includes(method) && rateLimited(ip, method, 20, 10 * 60 * 1000))
       return json({ error: { code: 'RATE', message: 'Too many attempts from this network. Wait 10 minutes and try again.' } }, 429, cors);
 
     let args = {};

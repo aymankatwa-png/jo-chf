@@ -61,6 +61,33 @@ export function createService({ repo, cipher, now = () => Date.now(), mailer = n
     for (const c of changes.slice(0, 400)) await audit(user, { ...base, field: c.field, old: c.old, new: c.new });
   }
 
+  // ---------- email ----------
+  function mailHtml(title, paragraphs, button) {
+    const e = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    return `<!doctype html><html><body style="margin:0;background:#FBF6F5;font-family:Arial,Helvetica,sans-serif;color:#14182B">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF6F5;padding:32px 12px"><tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border:1px solid #EAE1DF;border-radius:16px">
+      <tr><td style="padding:26px 28px 6px"><div style="font-size:22px;font-weight:800;letter-spacing:-.02em">Jo<span style="color:#D42A3C">-</span>CHF</div>
+      <div style="font-size:12px;color:#80859B">Jordan Contemporary Heart Failure Registry</div></td></tr>
+      <tr><td style="padding:14px 28px 4px"><h1 style="font-size:20px;margin:0 0 12px">${e(title)}</h1>
+      ${paragraphs.map(p => `<p style="font-size:15px;line-height:1.55;margin:0 0 12px;color:#474D66">${e(p)}</p>`).join('')}
+      ${button ? `<p style="margin:20px 0 8px"><a href="${e(button.url)}" style="display:inline-block;background:#14182B;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:10px">${e(button.label)}</a></p><p style="font-size:12px;color:#80859B;word-break:break-all">${e(button.url)}</p>` : ''}
+      </td></tr><tr><td style="padding:12px 28px 24px;font-size:12px;color:#80859B">You receive this email because of an account on the Jo-CHF registry.</td></tr></table></td></tr></table></body></html>`;
+  }
+  async function sendMail(to, name, subject, title, paragraphs, button) {
+    if (!mailer || !to) return false;
+    try { await mailer.send({ to, name, subject, text: [title, '', ...paragraphs, button ? '\n' + button.label + ': ' + button.url : ''].join('\n'), html: mailHtml(title, paragraphs, button) }); return true; }
+    catch { return false; }
+  }
+  async function sendVerify(u) {
+    if (!mailer || !u.email) return false;
+    const token = randomToken(24);
+    await repo.put('verify', { id: await sha256hex(token), userId: u.id, expires: now() + 48 * 3600000 });
+    return sendMail(u.email, u.name, 'Confirm your email for Jo-CHF', 'Confirm your email address',
+      [`Hello ${u.name},`, 'Please confirm that this email address belongs to you. The link works for 48 hours.'],
+      { label: 'Confirm my email', url: `${siteUrl}#/verify/${token}` });
+  }
+
   // ---------- sessions ----------
   async function session(token) {
     if (!token) err('AUTH', 'Please sign in.');
@@ -111,7 +138,8 @@ export function createService({ repo, cipher, now = () => Date.now(), mailer = n
     const u = { id: uuid(), username: normUser(username), name, email: email || (username.includes('@') ? username : ''), role: 'admin', centerId: null, status: 'active', pwHash: await hashPw(password), createdAt: new Date(now()).toISOString() };
     await repo.put('users', u);
     await audit(u, { action: 'setup', table: 'users', recordId: u.id, field: 'account', new: 'first administrator created' });
-    return { ok: true };
+    if (mailer && u.email) { u.emailVerified = false; await repo.put('users', u); await sendVerify(u); }
+    return { ok: true, mail: !!mailer };
   };
 
   api['auth.login'] = async (_, { username, password, code }) => {
@@ -152,7 +180,16 @@ export function createService({ repo, cipher, now = () => Date.now(), mailer = n
     const u = { id: uuid(), username: un, name: r.name.trim(), email: r.email || (un.includes('@') ? un : ''), phone: r.phone || '', centerId: r.centerId || null, requestedRole: r.role === 'admin' ? 'admin' : 'site', role: 'site', professionalId: r.professionalId || '', status: 'pending', pwHash: await hashPw(r.password), createdAt: new Date(now()).toISOString() };
     await repo.put('users', u);
     await audit(null, { action: 'register', table: 'users', recordId: u.id, field: 'account', new: `registration request: ${u.name}` });
-    return { ok: true };
+    let emailSent = false;
+    if (mailer && u.email) { u.emailVerified = false; await repo.put('users', u); emailSent = await sendVerify(u); }
+    if (mailer) {
+      const center = u.centerId ? await repo.get('centers', u.centerId) : null;
+      for (const a of users.filter(x => x.role === 'admin' && x.status === 'active' && x.email))
+        await sendMail(a.email, a.name, `Jo-CHF: new account request from ${u.name}`, 'New account request',
+          [`${u.name} asked for a ${u.requestedRole === 'admin' ? 'administrator' : 'site investigator'} account${center ? ` at ${center.code} · ${center.name}` : ''}.`, `Username: ${u.username}${u.professionalId ? ` · Professional ID: ${u.professionalId}` : ''}`, 'Open the Users page to approve or decline.'],
+          { label: 'Open Users', url: `${siteUrl}#/admin/users` });
+    }
+    return { ok: true, emailSent };
   };
 
   api['auth.forgot'] = async (_, { username }) => {
@@ -165,6 +202,23 @@ export function createService({ repo, cipher, now = () => Date.now(), mailer = n
       await mailer.send({ to: u.email, name: u.name, subject: 'Jo-CHF password reset', text: `Hello ${u.name},\n\nUse this link within 1 hour to set a new password:\n${siteUrl}#/reset/${token}\n\nIf you did not ask for this, ignore this email.` });
     }
     return { mode: 'email' };
+  };
+  api['auth.verifyEmail'] = async (_, { token }) => {
+    const v = await repo.get('verify', await sha256hex(token || ''));
+    if (!v || v.expires < now()) err('INVALID', 'This confirmation link has expired or was already used. Ask for a new one from your account page or from an administrator.');
+    const u = await repo.get('users', v.userId);
+    if (!u) err('INVALID', 'Account not found.');
+    u.emailVerified = true; u.emailVerifiedAt = new Date(now()).toISOString();
+    await repo.put('users', u); await repo.del('verify', v.id);
+    await audit(u, { action: 'email', table: 'users', recordId: u.id, field: 'email', new: 'email address confirmed' });
+    return { ok: true, status: u.status };
+  };
+  api['auth.resendVerify'] = async (_, { username }) => {
+    if (!mailer) return { ok: false };
+    const un = normUser(username);
+    const u = (await repo.list('users')).find(x => x.username === un || normUser(x.email) === un);
+    if (u && u.email && !u.emailVerified && u.status !== 'inactive') await sendVerify(u);
+    return { ok: true };
   };
   api['auth.reset'] = async (_, { token, password }) => {
     const r = await repo.get('resets', await sha256hex(token || ''));
@@ -187,6 +241,13 @@ export function createService({ repo, cipher, now = () => Date.now(), mailer = n
     user.pwHash = await hashPw(password); user.mustChange = false;
     await repo.put('users', user);
     await audit(user, { action: 'password', table: 'users', recordId: user.id, field: 'password', new: 'changed by user' });
+    return { ok: true };
+  };
+  authed['auth.sendVerify'] = async ({ user }) => {
+    if (!mailer) err('INVALID', 'Email is not set up for this registry yet.');
+    if (!user.email) err('INVALID', 'Your account has no email address. Ask an administrator to add it.');
+    if (user.emailVerified) return { ok: true, already: true };
+    await sendVerify(user);
     return { ok: true };
   };
   authed['auth.totpSetup'] = async ({ user }) => {
@@ -597,6 +658,12 @@ export function createService({ repo, cipher, now = () => Date.now(), mailer = n
     await repo.put('users', next);
     if (next.status !== 'active') for (const s of await repo.list('sessions')) if (s.userId === id) await repo.del('sessions', s.id);
     await auditDiff(user, { action: 'update', table: 'users', recordId: id }, diff(publicUser(u), publicUser(next)));
+    if (u.status !== 'active' && next.status === 'active' && next.email) {
+      const c = next.centerId ? await repo.get('centers', next.centerId) : null;
+      await sendMail(next.email, next.name, 'Your Jo-CHF account is active', 'Your account is ready',
+        [`Hello ${next.name},`, `An administrator approved your account${next.role === 'admin' ? ' as administrator' : c ? ` for ${c.code} · ${c.name}` : ''}. You can now sign in with the username and password you chose.`, `Username: ${next.username}`],
+        { label: 'Sign in to Jo-CHF', url: `${siteUrl}#/login` });
+    }
     return { ok: true };
   };
   authed['admin.resetPassword'] = async ({ user }, { id }) => {

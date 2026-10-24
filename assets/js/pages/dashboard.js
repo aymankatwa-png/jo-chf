@@ -9,7 +9,9 @@ const meterCls = v => (v == null ? '' : v < 70 ? ' badv' : v < 85 ? ' lowv' : ''
 function greeting(name) {
   const h = new Date().getHours();
   const part = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  return `${part}, ${name.split(' ').slice(0, 2).join(' ')}`;
+  const w = name.trim().split(/\s+/);
+  const short = /^(dr|prof)\.?$/i.test(w[0]) && w[1] ? `${w[0]} ${w[1]}` : w[0];
+  return `${part}, ${short}`;
 }
 
 export async function render(root, _, app) {

@@ -8,7 +8,7 @@ compatibility_date = "2025-09-01"
 [vars]
 ALLOWED_ORIGINS = "https://aymankatwa-png.github.io"
 SITE_URL = "https://aymankatwa-png.github.io/jo-chf/"
-MAIL_FROM = ""
+MAIL_FROM = "media@moomken.org"
 MAIL_FROM_NAME = "Jo-CHF Registry"
 PBKDF2_ITERATIONS = "100000"
 ALLOW_LOCALHOST = "0"

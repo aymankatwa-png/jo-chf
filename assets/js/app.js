@@ -17,6 +17,7 @@ const ROUTES = [
   [/^#\/forgot$/, () => import('./pages/auth.js'), 'forgot', true],
   [/^#\/reset\/(.+)$/, () => import('./pages/auth.js'), 'reset', true],
   [/^#\/setup$/, () => import('./pages/auth.js'), 'setup', true],
+  [/^#\/verify\/(.+)$/, () => import('./pages/auth.js'), 'verify', true],
   [/^#\/(dashboard)?$/, () => import('./pages/dashboard.js'), 'dashboard'],
   [/^#\/analytics$/, () => import('./pages/analytics.js'), 'analytics'],
   [/^#\/center\/([^/]+)$/, () => import('./pages/center.js'), 'center'],

@@ -13,7 +13,7 @@ export async function render(root, _, app) {
         <div class="row" style="gap:14px;margin-bottom:16px"><span class="avatar" style="width:54px;height:54px;font-size:18px">${esc(initials(u.name))}</span><div><div style="font-weight:650;font-size:18px">${esc(u.name)}</div><div class="ink2">${esc(u.username)}</div></div></div>
         <div class="list-rows"><div><span class="grow muted">Role</span><b>${u.role === 'admin' ? 'Administrator' : 'Site investigator / recruiter'}</b></div>
         <div><span class="grow muted">Center</span><b>${u.role === 'admin' ? 'All centers' : esc(app.center ? `${app.center.code} · ${app.center.name}` : '–')}</b></div>
-        <div><span class="grow muted">Email</span><b>${esc(u.email || '–')}</b></div></div>
+        <div><span class="grow muted">Email</span><b>${esc(u.email || '–')}</b>${u.emailVerified === true ? ' <span class="badge good">Confirmed</span>' : u.emailVerified === false ? ` <span class="badge warn">Not confirmed</span> <button class="btn xs" id="sendv">Send confirmation</button>` : ''}</div></div>
         <p class="small muted" style="margin-top:14px">To change your name, center or role, ask a study administrator.</p></div></div>
       <div class="card"><div class="card-head"><h2>Change password</h2></div><div class="card-body"><form id="pw" class="stack">
         <div class="field"><label for="cur">Current password</label><input id="cur" class="input" type="password" autocomplete="current-password" required></div>
@@ -29,6 +29,7 @@ export async function render(root, _, app) {
         <button type="button" data-v="" aria-pressed="${!document.documentElement.dataset.theme}">Same as device</button></div></div></div>
     </div>`;
     root.querySelector('#out').onclick = () => app.signOut();
+    root.querySelector('#sendv')?.addEventListener('click', async () => { try { const r = await call('auth.sendVerify'); toast(r.already ? 'Your email is already confirmed.' : 'Confirmation email sent. Check your inbox and spam folder.', 'ok', 6000); } catch (e) { toast(e.message, 'bad'); } });
     root.querySelector('#pw').onsubmit = async e => {
       e.preventDefault();
       const np = root.querySelector('#np').value;
