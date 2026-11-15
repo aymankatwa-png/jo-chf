@@ -1,4 +1,4 @@
-// Jo-CHF backend: Cloudflare Worker. One endpoint, POST /api/<action>, JSON in and out.
+// JoPal-CHF backend: Cloudflare Worker. One endpoint, POST /api/<action>, JSON in and out.
 // All the rules live in assets/js/core/service.js (shared with the website's demo mode).
 import { createService, ApiError } from '../../assets/js/core/service.js';
 import { makeCipher } from '../../assets/js/core/crypto.js';
@@ -33,7 +33,7 @@ function mailer(env) {
     async send({ to, name, subject, text, html }) {
       const r = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST', headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: { email: env.MAIL_FROM, name: env.MAIL_FROM_NAME || 'Jo-CHF Registry' }, to: [{ email: to, name }], subject, textContent: text, ...(html ? { htmlContent: html } : {}) }),
+        body: JSON.stringify({ sender: { email: env.MAIL_FROM, name: env.MAIL_FROM_NAME || 'JoPal-CHF Registry' }, to: [{ email: to, name }], subject, textContent: text, ...(html ? { htmlContent: html } : {}) }),
       });
       if (!r.ok) console.log('mail failed', r.status);
     },

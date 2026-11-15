@@ -77,7 +77,7 @@ async function renderNew(root, centerId, app) {
   function updateBtn() { const elig = L.eligibility(rec.enrollment); root.querySelector('#enroll').disabled = !(elig.eligible && ident.name && rec.clinical?.setting); }
   const dupCheck = debounce(async () => {
     const r = await call('patient.checkDuplicate', { centerId, ident }).catch(() => null);
-    root.querySelector('#dup').innerHTML = r?.duplicate ? `<div class="callout warn" style="margin-top:12px">${icon('alert')}<div><b>Possible duplicate.</b> A patient with this national ID or file number may already be in the registry. Check before enrolling (Jo-CHF does not allow enrolling the same patient twice).</div></div>` : '';
+    root.querySelector('#dup').innerHTML = r?.duplicate ? `<div class="callout warn" style="margin-top:12px">${icon('alert')}<div><b>Possible duplicate.</b> A patient with this national ID or file number may already be in the registry. Check before enrolling (JoPal-CHF does not allow enrolling the same patient twice).</div></div>` : '';
   }, 600);
   async function enroll(force) {
     const btn = root.querySelector('#enroll'); btn.disabled = true;
@@ -257,8 +257,9 @@ async function renderRecord(root, id, tab, app) {
   }
 
   // ---------- change handling + autosave ----------
-  const persistDraft = debounce(() => saveDraft(id, { version: server.version, rec, ident }), 400);
-  const autoSave = debounce(() => { if (dirty && !server.complete && canEdit() && !Object.values(currentIssues()).some(i => i.level === 'error')) save({ auto: true }); }, 5000);
+  let gone = false; // set when this view is left, so delayed timers from it do nothing
+  const persistDraft = debounce(() => !gone && saveDraft(id, { version: server.version, rec, ident }), 400);
+  const autoSave = debounce(() => { if (!gone && dirty && !server.complete && canEdit() && !Object.values(currentIssues()).some(i => i.level === 'error')) save({ auto: true }); }, 5000);
   function markDirty() { dirty = true; lastError = null; persistDraft(); autoSave(); const ss = root.querySelector('#savestate'); if (ss && !ss.classList.contains('dirty')) updateSaveBar(); }
   bindFields(root, () => rec, (k, o) => {
     if (root.querySelector('#identf')?.contains(document.activeElement) && !k.includes('.')) return;
@@ -317,7 +318,7 @@ async function renderRecord(root, id, tab, app) {
         const tabFor = p => { if (p.startsWith('baselineReasons') || p === 'baselineMeds') return 'meds'; if (p.startsWith('hosp')) return 'hosp'; const t = TABS.find(t2 => t2.sections.some(sec => (sec.fields || []).some(f => f.k === p))); return t?.id || (p === 'labs.natriuretic' ? 'investigations' : 'enrollment'); };
         modal({
           title: 'A few things are still needed', wide: true,
-          body: `<p class="ink2">Fill these fields, or mark them <b>Not done</b> / <b>Unknown</b>. Click an item to go there.</p><div class="list-rows">${list.map(b => `<div><span class="badge warn">${esc(TABS.find(t2 => t2.id === tabFor(b.path))?.label || tabFor(b.path))}</span><a href="#/patient/${id}/${tabFor(b.path)}" class="grow" data-close>${esc(fieldLabel(b.path) === b.path ? (b.path === 'labs.natriuretic' ? 'NT-proBNP or BNP' : b.path === 'baselineMeds' ? 'Confirm that all HF medicines are recorded' : b.path) : fieldLabel(b.path))}</a><span class="small ink2">${esc(b.msg)}</span></div>`).join('')}</div>`,
+          body: `<p class="ink2">Fill these fields, or mark them <b>Not reported</b> / <b>Unknown</b>. Click an item to go there.</p><div class="list-rows">${list.map(b => `<div><span class="badge warn">${esc(TABS.find(t2 => t2.id === tabFor(b.path))?.label || tabFor(b.path))}</span><a href="#/patient/${id}/${tabFor(b.path)}" class="grow" data-close>${esc(fieldLabel(b.path) === b.path ? (b.path === 'labs.natriuretic' ? 'NT-proBNP or BNP' : b.path === 'baselineMeds' ? 'Confirm that all HF medicines are recorded' : b.path) : fieldLabel(b.path))}</a><span class="small ink2">${esc(b.msg)}</span></div>`).join('')}</div>`,
           actions: [{ label: 'OK', kind: 'primary' }],
           onOpen: back => back.addEventListener('click', ev => { if (ev.target.closest('[data-close]')) back.querySelector('[data-a]').click(); }),
         });
@@ -331,7 +332,7 @@ async function renderRecord(root, id, tab, app) {
     const CH = { start: 'Start', increase: 'Increase', decrease: 'Decrease', stop: 'Stop', switch: 'Switch' };
     return `<p class="help">Record each change between visits. The next visit's medication list is pre-filled from this log, so you enter things only once.</p>
       ${list.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Drug</th><th>Change</th><th>New dose</th><th>Reason</th><th></th></tr></thead><tbody>
-        ${list.map(t => `<tr><td>${fmtDateShort(t.date)}</td><td><b style="font-weight:600">${esc(t.drug)}</b>${t.fromDrug ? `<div class="small muted">from ${esc(t.fromDrug)}</div>` : ''}</td><td><span class="badge ${t.change === 'increase' || t.change === 'start' ? 'good' : t.change === 'stop' || t.change === 'decrease' ? 'warn' : 'info'}">${CH[t.change]}</span></td><td class="tnum">${t.change === 'stop' ? '–' : `${t.dose ?? ''} mg ${L.FREQ_LABEL[t.freq] || ''}`}</td><td class="small ink2">${esc(t.reason || '')}</td><td>${canEdit() ? `<button class="btn ghost xs" data-tdel="${t.id}" aria-label="Remove entry">${icon('trash')}</button>` : ''}</td></tr>`).join('')}
+        ${list.map(t => `<tr><td>${fmtDateShort(t.date)}</td><td><b style="font-weight:600">${esc(t.drug)}</b>${t.brand ? ` <span class="small muted">(${esc(t.brand)})</span>` : ''}${t.fromDrug ? `<div class="small muted">from ${esc(t.fromDrug)}</div>` : ''}</td><td><span class="badge ${t.change === 'increase' || t.change === 'start' ? 'good' : t.change === 'stop' || t.change === 'decrease' ? 'warn' : 'info'}">${CH[t.change]}</span></td><td class="tnum">${t.change === 'stop' ? '–' : `${t.dose ?? ''} mg ${L.FREQ_LABEL[t.freq] || ''}`}</td><td class="small ink2">${esc(t.reason || '')}</td><td>${canEdit() ? `<button class="btn ghost xs" data-tdel="${t.id}" aria-label="Remove entry">${icon('trash')}</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>` : '<p class="muted small" style="margin:6px 0 10px">No changes logged yet.</p>'}
       ${canEdit() ? `<button class="btn sm" id="tadd" style="margin-top:10px">${icon('plus')}Log a medication change</button>` : ''}`;
   }
@@ -350,6 +351,7 @@ async function renderRecord(root, id, tab, app) {
           <div class="field"><label>Date</label>${dateInput('t_date', 'date', e.date)}</div>
           <div class="field"><label>Type of change</label><select class="input" data-k="change" data-t="select">${[['start', 'Start'], ['increase', 'Increase'], ['decrease', 'Decrease'], ['stop', 'Stop'], ['switch', 'Switch to another drug']].map(([a, b]) => `<option value="${a}"${a === e.change ? ' selected' : ''}>${b}</option>`).join('')}</select></div>
           <div class="field"><label>Drug</label><select class="input" data-k="drug" data-t="select"><option value="">Choose…</option>${drugs.map(([a, b]) => `<option value="${esc(a)}">${esc(b)}</option>`).join('')}</select></div>
+          <div class="field" data-cname><label>Commercial name</label><input class="input" data-k="brand" data-t="text" placeholder="Brand name (optional)"></div>
           <div class="field" data-switch><label>Switching from</label><select class="input" data-k="fromDrug" data-t="select"><option value="">Choose…</option>${cur.map(m => `<option>${esc(m.drug)}</option>`).join('')}</select></div>
           <div class="field" data-dose><label>New dose each time</label><div class="with-unit"><input class="input" inputmode="decimal" data-k="dose" data-t="number"><span class="unit">mg</span></div></div>
           <div class="field" data-dose><label>How often</label><select class="input" data-k="freq" data-t="select">${[['od', 'Once daily'], ['bd', 'Twice daily'], ['tds', 'Three times daily']].map(([a, b]) => `<option value="${a}">${b}</option>`).join('')}</select></div>
@@ -358,7 +360,7 @@ async function renderRecord(root, id, tab, app) {
       actions: [{ label: 'Cancel', value: false }, { label: 'Save change', kind: 'primary', onClick: async () => { if (!e.drug) throw new Error('Choose the drug.'); if (e.change !== 'stop' && !e.dose) throw new Error('Enter the new dose.'); await call('titration.save', { patientId: id, entry: e }); toast('Change logged.'); await reload(); } }],
       onOpen: back => {
         const tf = back.querySelector('#tf');
-        const vis = () => { back.querySelector('[data-switch]').classList.toggle('hide', e.change !== 'switch'); back.querySelectorAll('[data-dose]').forEach(x => x.classList.toggle('hide', e.change === 'stop')); };
+        const vis = () => { back.querySelector('[data-switch]').classList.toggle('hide', e.change !== 'switch'); back.querySelectorAll('[data-dose],[data-cname]').forEach(x => x.classList.toggle('hide', e.change === 'stop')); };
         vis(); bindFields(tf, () => e, () => vis());
       },
     });
@@ -612,6 +614,7 @@ async function renderRecord(root, id, tab, app) {
   window.addEventListener('beforeunload', beforeUnload);
   draw();
   return () => {
+    gone = true;
     window.removeEventListener('beforeunload', beforeUnload);
     if (location.hash.startsWith(`#/patient/${id}/`) || location.hash === `#/patient/${id}`) { keep = { id, version: server.version, rec, ident, dirty }; return; }
     if (dirty) { saveDraft(id, { version: server.version, rec, ident }); toast('Unsaved changes are kept on this device as a draft.', 'info'); }

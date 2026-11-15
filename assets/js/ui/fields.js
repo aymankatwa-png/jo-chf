@@ -13,10 +13,10 @@ export function field(f, ctx) {
   const nd = obj.notDone?.[f.k];
   const iss = ctx.issues?.[f.k];
   const missing = ctx.showMissing && f.req && !nd && !isFilledField(obj, f);
-  const cls = ['field', f.full ? 'full' : '', iss?.level === 'error' ? 'has-error' : '', missing ? 'missing' : '', nd ? 'nd' : ''].filter(Boolean).join(' ');
+  const cls = ['field', f.full ? 'full' : '', f.wide ? 'wide' : '', f.newRow ? 'newrow' : '', iss?.level === 'error' ? 'has-error' : '', missing ? 'missing' : '', nd ? 'nd' : ''].filter(Boolean).join(' ');
   const ro = ctx.readonly;
   const id = fid(f.k);
-  const label = `<label for="${id}">${esc(f.label)}${f.req ? '<span class="req" aria-label="required">*</span>' : ''}${f.nd && ctx.ndAllowed !== false ? ndToggle(f.k, nd, ro) : ''}</label>`;
+  const label = `<label for="${id}">${esc(f.label)}${f.req ? '<span class="req" aria-label="required">*</span>' : ''}${f.nd && ctx.ndAllowed !== false ? ndToggle(f, nd, ro, v) : ''}</label>`;
   const help = f.help ? `<div class="help">${esc(f.help)}</div>` : '';
   const msg = iss ? `<div class="${iss.level === 'error' ? 'err' : 'warnmsg'}" role="${iss.level === 'error' ? 'alert' : 'status'}">${esc(iss.msg)}</div>` : '';
   let input = '';
@@ -41,9 +41,14 @@ function isFilledField(obj, f) {
   if (f.type === 'check') return getPath(obj, f.k) === true;
   return isFilled(getPath(obj, f.k));
 }
-function ndToggle(k, nd, ro) {
-  return `<span class="nd-toggle" role="group" aria-label="Mark as not done or unknown">
-    <button type="button" data-nd="${k}" data-v="nd" aria-pressed="${nd === 'nd'}" title="Not done"${attr('disabled', ro)}>Not done</button>
+function ndToggle(f, nd, ro, v) {
+  // Most fields: "Not reported" / "Unknown". A count field with ndNone: "None" (sets the value to 0) / "Unknown".
+  const k = f.k;
+  const first = f.ndNone
+    ? `<button type="button" data-nd="${k}" data-v="none" aria-pressed="${v === 0 && !nd}" title="None (zero)"${attr('disabled', ro)}>None</button>`
+    : `<button type="button" data-nd="${k}" data-v="nd" aria-pressed="${nd === 'nd'}" title="Not reported"${attr('disabled', ro)}>Not reported</button>`;
+  return `<span class="nd-toggle" role="group" aria-label="${f.ndNone ? 'Mark as none or unknown' : 'Mark as not reported or unknown'}">
+    ${first}
     <button type="button" data-nd="${k}" data-v="unk" aria-pressed="${nd === 'unk'}" title="Unknown"${attr('disabled', ro)}>Unknown</button></span>`;
 }
 export function dateInput(id, k, v, ro) {
@@ -92,6 +97,7 @@ export function bindFields(root, getObj, onChange) {
     const b = e.target.closest('button'); if (!b) return;
     const obj = getObj();
     if (b.dataset.t === 'seg') { const k = b.dataset.k; const cur = getPath(obj, k); setPath(obj, k, cur === b.dataset.v ? undefined : b.dataset.v); onChange(k, { structural: true }); }
+    else if (b.dataset.nd && b.dataset.v === 'none') { const k = b.dataset.nd; if (obj.notDone) delete obj.notDone[k]; setPath(obj, k, getPath(obj, k) === 0 ? undefined : 0); onChange(k, { structural: true }); }
     else if (b.dataset.nd) { const k = b.dataset.nd; obj.notDone = obj.notDone || {}; if (obj.notDone[k] === b.dataset.v) delete obj.notDone[k]; else { obj.notDone[k] = b.dataset.v; } onChange(k, { structural: true }); }
     else if (b.dataset.cal) { const n = root.querySelector(`[data-native="${b.dataset.cal}"]`); try { n.showPicker(); } catch { n.click(); } }
   });

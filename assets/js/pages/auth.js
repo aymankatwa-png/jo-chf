@@ -33,13 +33,9 @@ export async function render(root, { name, params }, app) {
   <div class="auth">
     <section class="auth-stage ecg-paper" aria-hidden="false">
       <canvas id="ecg" aria-hidden="true"></canvas>
-      <div class="auth-top"><span class="brand-mark">${ECG_MARK}</span><span class="small ink2">Jordan Contemporary Heart Failure Registry</span></div>
+      <div class="auth-top"><span class="brand-mark">${ECG_MARK}</span><span class="small ink2">Jordan and Palestine Contemporary Heart Failure Registry</span></div>
       <div class="auth-hero">
-        <div class="wordmark">Jo<span>-</span>CHF</div>
-        <p class="title">Every patient with heart failure in Jordan, followed for a year, in one place.</p>
-        <div class="auth-facts">
-          <div><b>1,000</b>adult patients</div><div><b>10–20</b>centers across Jordan</div><div><b>30d · 6m · 12m</b>follow-up visits</div><div><b>ESC 2026</b>classification</div>
-        </div>
+        <div class="wordmark">JoPal<span>-</span>CHF</div>
       </div>
     </section>
     <section class="auth-panel"><div class="auth-card" id="card"></div></section>

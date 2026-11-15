@@ -53,7 +53,7 @@ export async function render(root, _, app) {
   root.innerHTML = `
   <div class="reveal">
     <div class="page-head"><div class="grow"><h1>${esc(greeting(app.user.name))}</h1>
-      <p>${app.isAdmin ? 'Live status of the registry across all centers. Click any center to open it.' : `Live status of the registry. You can open <b>${esc(app.center?.name || 'your center')}</b>; other centers show summary numbers only.`}</p></div>
+      <p>${app.isAdmin ? 'Live status of the registry across all centers. Click any center to open it.' : `Live status of <b>${esc(app.center?.name || 'your center')}</b>.`}</p></div>
       ${!app.isAdmin && app.user.centerId ? `<a class="btn primary" href="#/patient/new/${app.user.centerId}">${icon('plus')}Add new patient</a>` : `<a class="btn" href="#/analytics">${icon('chart')}Open analytics</a>`}
     </div>
     <section class="hero-rhythm" aria-label="Registry total">
@@ -61,7 +61,7 @@ export async function render(root, _, app) {
       <div class="hero-grid">
         <div class="hero-count">
           <div><span class="big" id="big">0</span><span class="of">/ ${fmtN(t.target)}</span></div>
-          <div class="caption">patients enrolled in Jo-CHF · <b class="tnum">${pct}%</b> of the registry target</div>
+          <div class="caption">${app.isAdmin ? 'patients enrolled in JoPal-CHF' : 'patients enrolled at your center'} · <b class="tnum">${pct}%</b> of the ${app.isAdmin ? 'registry' : 'center'} target</div>
           <div class="bar"><i id="bigbar"></i></div>
         </div>
         <div class="rhythm-wrap">
@@ -78,11 +78,11 @@ export async function render(root, _, app) {
       </div>
     </section>
     <div>
-      <div class="section-title"><h2>Centers</h2>
-        <label class="small muted" for="sort">Sort by</label>
+      <div class="section-title"><h2>${app.isAdmin ? 'Centers' : 'Your center'}</h2>
+        ${app.isAdmin ? `<label class="small muted" for="sort">Sort by</label>
         <select id="sort" class="input" style="width:auto;height:34px;font-size:13.5px">
           <option value="code">Center code</option><option value="enrolled">Recruitment vs target</option><option value="followup">30-day follow-up</option><option value="overdue">Overdue visits</option>
-        </select>
+        </select>` : ''}
       </div>
       <div class="centers" id="centers">${sorted().map(card).join('')}</div>
       ${!d.cards.length ? `<div class="card empty">${icon('building')}<h3>No centers yet</h3><p>${app.isAdmin ? 'Add the participating centers and their recruitment targets.' : 'The study team has not added centers yet.'}</p>${app.isAdmin ? '<p style="margin-top:14px"><a class="btn primary" href="#/admin/centers">Add centers</a></p>' : ''}</div>` : ''}
@@ -101,7 +101,7 @@ export async function render(root, _, app) {
   rh.innerHTML = rhythmStrip(t.trend.slice(-keep), t.months.slice(-keep).map(m => MONTHS[+m.slice(5) - 1]), { width: rw });
   playRhythm(rh);
   animateRings(root);
-  root.querySelector('#sort').onchange = e => {
+  const sortEl = root.querySelector('#sort'); if (sortEl) sortEl.onchange = e => {
     sort = e.target.value;
     const el = root.querySelector('#centers'); el.innerHTML = sorted().map(card).join('');
     el.querySelectorAll('.meter i[data-w]').forEach(i => (i.style.width = i.dataset.w + '%'));

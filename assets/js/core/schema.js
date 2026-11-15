@@ -6,7 +6,9 @@ const o = (...pairs) => pairs.map(p => (Array.isArray(p) ? p : [p, p]));
 export const YNU = o(['yes', 'Yes'], ['no', 'No'], ['unk', 'Unknown']);
 export const YN = o(['yes', 'Yes'], ['no', 'No']);
 
-export const GOVERNORATES = o('Amman', 'Irbid', 'Zarqa', 'Balqa', 'Mafraq', 'Karak', 'Jerash', 'Ajloun', 'Madaba', 'Aqaba', 'Tafilah', "Ma'an", ['outside', 'Outside Jordan']);
+export const GOVERNORATES = o('Amman', 'Irbid', 'Zarqa', 'Balqa', 'Mafraq', 'Karak', 'Jerash', 'Ajloun', 'Madaba', 'Aqaba', 'Tafilah', "Ma'an", ['outside', 'Outside Jordan and Palestine']);
+// Palestinian governorates are listed after the Jordanian ones (labelled "Palestine: ...").
+GOVERNORATES.splice(GOVERNORATES.length - 1, 0, ...['Jerusalem', 'Ramallah and Al-Bireh', 'Nablus', 'Hebron', 'Bethlehem', 'Jenin', 'Tulkarm', 'Qalqilya', 'Salfit', 'Tubas', 'Jericho', 'North Gaza', 'Gaza', 'Deir al-Balah', 'Khan Yunis', 'Rafah'].map(g => ['ps-' + g.toLowerCase().replace(/[^a-z]+/g, '-'), 'Palestine: ' + g]));
 export const EDUCATION = o(['none', 'No formal education'], ['primary', 'Primary'], ['secondary', 'Secondary'], ['diploma', 'Diploma'], ['university', 'University'], ['postgrad', 'Postgraduate'], ['unk', 'Unknown']);
 export const COVERAGE = o(['moh', 'Ministry of Health'], ['rms', 'Royal Medical Services'], ['private', 'Private insurance'], ['unrwa', 'UNRWA'], ['self', 'Self-pay'], ['other', 'Other']);
 export const SMOKING = o(['never', 'Never'], ['former', 'Former'], ['cigarettes', 'Current cigarettes'], ['waterpipe', 'Waterpipe (argileh)'], ['ecig', 'E-cigarette']);
@@ -19,17 +21,21 @@ export const ETIOLOGY = o(['ihd', 'Ischemic heart disease'], ['htn', 'Hypertensi
 export const IHD_DETAIL = o(['mi', 'Prior MI'], ['ccs', 'Chronic coronary syndrome'], ['pci', 'PCI'], ['cabg', 'CABG']);
 export const TOXIC_DETAIL = o(['alcohol', 'Alcohol'], ['chemo', 'Chemotherapy'], ['other', 'Other']);
 export const VALVE_TYPE = o(['rheumatic', 'Rheumatic'], ['degenerative', 'Degenerative'], ['other', 'Other']);
+export const VALVE_SEVERITY = o(['mild', 'Mild'], ['modsev', 'Moderate to severe']);
 export const VALVES = o(['mitral', 'Mitral'], ['aortic', 'Aortic'], ['tricuspid', 'Tricuspid'], ['pulmonary', 'Pulmonary']);
 export const ECHO_METHOD = o(['simpson', 'Biplane Simpson'], ['visual', 'Visual'], ['other', 'Other']);
 export const DM_TYPE = o(['t1', 'Type 1'], ['t2', 'Type 2'], ['other', 'Other']);
 export const AF_TYPE = o(['paroxysmal', 'Paroxysmal'], ['persistent', 'Persistent'], ['permanent', 'Permanent']);
 export const REASONS = o(['hypotension', 'Hypotension'], ['bradycardia', 'Bradycardia'], ['hyperkalemia', 'Hyperkalemia'], ['renal', 'Worsening renal function'], ['contra', 'Contraindication'], ['intolerance', 'Previous intolerance or side effect'], ['cost', 'Cost or not available'], ['refusal', 'Patient refusal'], ['titrating', 'Titration in progress (planned)'], ['clinician', 'Clinician decision or not considered'], ['other', 'Other']);
+// SGLT2 inhibitors: urinary tract or genital infection is the first reason offered.
+export const REASONS_SGLT2 = [['uti', 'UTI / genital infection'], ...REASONS];
+export const reasonsFor = group => (group === 'SGLT2' || group === 'sglt2' ? REASONS_SGLT2 : REASONS);
 export const CHANGE_TYPES = o(['start', 'Start'], ['increase', 'Increase'], ['decrease', 'Decrease'], ['stop', 'Stop'], ['switch', 'Switch']);
 export const FREQS = o(['od', 'Once daily'], ['bd', 'Twice daily'], ['tds', 'Three times daily'], ['qds', 'Four times daily']);
 export const ADHERENCE = o(['all', 'Taking all'], ['most', 'Most'], ['some', 'Some'], ['none', 'None']);
 export const CONTACT_METHOD = o(['clinic', 'Clinic visit'], ['phone', 'Phone']);
 export const VITAL = o(['alive', 'Alive'], ['dead', 'Dead'], ['unknown', 'Unknown']);
-export const ADE = o(['hyperkalemia', 'Hyperkalemia'], ['wrf', 'Worsening renal function'], ['hypotension', 'Symptomatic hypotension'], ['genital', 'Genital infection'], ['angioedema', 'Angioedema'], ['other', 'Other']);
+export const ADE = o(['hyperkalemia', 'Hyperkalemia'], ['wrf', 'Worsening renal function'], ['hypotension', 'Symptomatic hypotension'], ['uti', 'Urinary tract infection'], ['genital', 'Genital infection'], ['angioedema', 'Angioedema'], ['other', 'Other']);
 export const EVENT_REASON = o(['hf', 'Heart failure'], ['cv', 'Other cardiovascular'], ['noncv', 'Non-cardiovascular']);
 export const CV_DETAIL = o(['acs', 'ACS'], ['arrhythmia', 'Arrhythmia'], ['stroke', 'Stroke'], ['other', 'Other']);
 export const DEATH_PLACE = o(['hospital', 'Hospital'], ['home', 'Home'], ['other', 'Other']);
@@ -65,6 +71,7 @@ export const DEVICES = [
   { k: 'ccm', label: 'Cardiac contractility modulation' }, { k: 'teer', label: 'Transcatheter edge-to-edge repair (mitral or tricuspid)' },
   { k: 'valve', label: 'Surgical or transcatheter valve intervention' }, { k: 'revasc', label: 'Coronary revascularization' },
   { k: 'ablation', label: 'AF ablation' }, { k: 'lvad', label: 'Left ventricular assist device' }, { k: 'transplant', label: 'Heart transplant (listed or done)' },
+  { k: 'laac', label: 'Left atrial appendage closure device' },
 ];
 export const DEVICE_STATUS = o(['present', 'Present at enrollment'], ['implanted', 'Done during follow-up'], ['indicated', 'Indicated, not done'], ['notind', 'Not indicated']);
 
@@ -131,9 +138,11 @@ export const TABS = [
           { k: 'demographics.sex', label: 'Sex', type: 'seg', opts: o(['M', 'Male'], ['F', 'Female']), req: true },
           { k: 'demographics.governorate', label: 'Governorate of residence', type: 'select', opts: GOVERNORATES, req: true, nd: true },
           { k: 'demographics.education', label: 'Education level', type: 'select', opts: EDUCATION },
+          { k: 'demographics.occupation', label: 'Occupation (job)', type: 'text', placeholder: 'e.g. teacher, driver, retired' },
           { k: 'demographics.coverage', label: 'Health coverage', type: 'select', opts: COVERAGE, req: true, nd: true },
           { k: 'demographics.coverageOther', label: 'Other coverage', type: 'text', show: p => p.demographics?.coverage === 'other' },
           { k: 'demographics.smoking', label: 'Smoking (multiple allowed)', type: 'multi', opts: SMOKING, req: true, nd: true, full: true },
+          { k: 'demographics.packYears', label: 'Pack-years (cigarettes)', type: 'number', unit: 'pack-years', min: 0, step: 0.5, help: 'Packs per day × years smoked. Example: 1 pack a day for 20 years = 20.', show: p => (p.demographics?.smoking || []).includes('cigarettes') },
         ]
       },
       {
@@ -155,7 +164,7 @@ export const TABS = [
           { k: 'clinical.firstDxDate', label: 'First HF diagnosis (month/year)', type: 'month' },
           { k: 'clinical.stage', label: 'HF stage', type: 'seg', opts: STAGE, req: true },
           { k: 'clinical.nyha', label: 'NYHA class', type: 'seg', opts: NYHA, req: true },
-          { k: 'clinical.hfHosp12m', label: 'HF hospitalizations in previous 12 months', type: 'number', unit: 'times', min: 0, step: 1, req: true, nd: true },
+          { k: 'clinical.hfHosp12m', label: 'HF hospitalizations in previous 12 months', type: 'number', unit: 'times', min: 0, step: 1, req: true, nd: true, ndNone: true },
         ]
       },
       {
@@ -185,6 +194,7 @@ export const TABS = [
           { k: 'etiology.ihd', label: 'Ischemic details', type: 'multi', opts: IHD_DETAIL, full: true, show: p => p.etiology?.primary === 'ihd' || p.etiology?.contributing?.includes('ihd') },
           { k: 'etiology.toxic', label: 'Toxic cause', type: 'multi', opts: TOXIC_DETAIL, show: p => p.etiology?.primary === 'toxic' || p.etiology?.contributing?.includes('toxic') },
           { k: 'etiology.valveType', label: 'Valvular type', type: 'seg', opts: VALVE_TYPE, show: p => p.etiology?.primary === 'valvular' || p.etiology?.contributing?.includes('valvular') },
+          { k: 'etiology.valveSeverity', label: 'Significance', type: 'seg', opts: VALVE_SEVERITY, show: p => p.etiology?.primary === 'valvular' || p.etiology?.contributing?.includes('valvular') },
           { k: 'etiology.valves', label: 'Valve affected', type: 'multi', opts: VALVES, show: p => p.etiology?.primary === 'valvular' || p.etiology?.contributing?.includes('valvular') },
           { k: 'etiology.other', label: 'Other etiology (specify)', type: 'text', show: p => p.etiology?.primary === 'other' || p.etiology?.contributing?.includes('other') },
         ]
@@ -205,8 +215,9 @@ export const TABS = [
           { k: 'echo.prevDate', label: 'Previous LVEF date', type: 'date' },
           { k: 'echo.lvedd', label: 'LV end-diastolic diameter', type: 'number', unit: 'mm' },
           { k: 'echo.tapse', label: 'TAPSE', type: 'number', unit: 'mm' },
-          { k: 'echo.pasp', label: 'PASP', type: 'number', unit: 'mmHg' },
-          { k: 'echo.valveDisease', label: 'Significant valve disease', type: 'multi', opts: o(['ms', 'Mitral stenosis'], ['mr', 'Mitral regurgitation'], ['as', 'Aortic stenosis'], ['ar', 'Aortic regurgitation'], ['tr', 'Tricuspid regurgitation']), full: true },
+          { k: 'echo.pasp', label: 'PASP', type: 'number', unit: 'mmHg', newRow: true },
+          { k: 'echo.other', label: 'Other echo findings', type: 'text', wide: true, placeholder: 'e.g. LV thrombus, pericardial effusion' },
+          { k: 'echo.valveDisease', label: 'Significant valve disease (moderate to severe or more)', type: 'multi', opts: o(['ms', 'Mitral stenosis'], ['mr', 'Mitral regurgitation'], ['as', 'Aortic stenosis'], ['ar', 'Aortic regurgitation'], ['tr', 'Tricuspid regurgitation']), full: true },
         ]
       },
       {
@@ -226,6 +237,10 @@ export const TABS = [
           { k: 'labs.uacr', label: 'UACR', type: 'lab', lab: 'uacr' },
           { k: 'labs.hba1c', label: 'HbA1c', type: 'lab', lab: 'hba1c' },
           { k: 'labs.tsh', label: 'TSH (optional)', type: 'lab', lab: 'tsh' },
+          { k: 'labs.ast', label: 'AST', type: 'lab', lab: 'ast' },
+          { k: 'labs.alt', label: 'ALT', type: 'lab', lab: 'alt' },
+          { k: 'labs.trop', label: 'Serum troponin', type: 'lab', lab: 'trop' },
+          { k: 'labs.tropAssay', label: 'Troponin assay', type: 'select', opts: o(['hstnt', 'High-sensitivity troponin T'], ['hstni', 'High-sensitivity troponin I'], ['tnt', 'Troponin T (conventional)'], ['tni', 'Troponin I (conventional)']), show: p => p.labs?.trop != null },
         ]
       },
       {

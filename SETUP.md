@@ -1,4 +1,4 @@
-# Setting up Jo-CHF (one time)
+# Setting up JoPal-CHF (one time)
 
 The website is already live in demo mode on GitHub Pages. These steps switch on the real backend.
 

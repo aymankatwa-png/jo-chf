@@ -1,4 +1,4 @@
-// Jo-CHF clinical logic. Pure functions, no DOM, no network.
+// JoPal-CHF clinical logic. Pure functions, no DOM, no network.
 // Shared by the website (browser) and the backend (Cloudflare Worker).
 
 // ---------- dates (stored as ISO "YYYY-MM-DD", shown as DD/MM/YYYY) ----------
@@ -93,6 +93,9 @@ export const LAB_UNITS = {
   uacr: { std: 'mg/g', units: { 'mg/g': 1, 'mg/mmol': 8.84 } },
   hba1c: { std: '%', units: { '%': 1, 'mmol/mol': null } },
   tsh: { std: 'mIU/L', units: { 'mIU/L': 1, 'µIU/mL': 1 } },
+  ast: { std: 'U/L', units: { 'U/L': 1, 'IU/L': 1 } },
+  alt: { std: 'U/L', units: { 'U/L': 1, 'IU/L': 1 } },
+  trop: { std: 'ng/L', units: { 'ng/L': 1, 'pg/mL': 1, 'ng/mL': 1000 } },
 };
 export function toStdUnit(lab, value, unit) {
   const v = num(value); if (v == null) return null;
@@ -206,11 +209,12 @@ export function gdmtNeedsReason(meds, targets, weightKg) {
 export function applyTitration(meds, entry) {
   const list = (meds || []).map(m => ({ ...m }));
   const i = list.findIndex(m => m.drug === entry.drug || (entry.fromDrug && m.drug === entry.fromDrug));
+  const brand = o => (entry.brand ? { ...o, brand: entry.brand } : o);
   switch (entry.change) {
-    case 'start': if (i < 0) list.push({ drug: entry.drug, dose: entry.dose, freq: entry.freq }); else Object.assign(list[i], { dose: entry.dose, freq: entry.freq }); break;
-    case 'increase': case 'decrease': if (i >= 0) Object.assign(list[i], { dose: entry.dose, freq: entry.freq || list[i].freq }); else list.push({ drug: entry.drug, dose: entry.dose, freq: entry.freq }); break;
+    case 'start': if (i < 0) list.push(brand({ drug: entry.drug, dose: entry.dose, freq: entry.freq })); else Object.assign(list[i], brand({ dose: entry.dose, freq: entry.freq })); break;
+    case 'increase': case 'decrease': if (i >= 0) Object.assign(list[i], brand({ dose: entry.dose, freq: entry.freq || list[i].freq })); else list.push(brand({ drug: entry.drug, dose: entry.dose, freq: entry.freq })); break;
     case 'stop': if (i >= 0) list.splice(i, 1); break;
-    case 'switch': if (i >= 0) list.splice(i, 1); list.push({ drug: entry.drug, dose: entry.dose, freq: entry.freq }); break;
+    case 'switch': if (i >= 0) list.splice(i, 1); list.push(brand({ drug: entry.drug, dose: entry.dose, freq: entry.freq })); break;
   }
   return list;
 }
@@ -329,11 +333,18 @@ export const RANGE_RULES = [
   { path: 'labs.tsat', min: 1, max: 100, hard: true, label: 'TSAT', unit: '%' },
   { path: 'labs.ntprobnp', min: 5, max: 70000, hard: true, label: 'NT-proBNP', unit: 'pg/mL' },
   { path: 'labs.bnp', min: 1, max: 5000, hard: true, label: 'BNP', unit: 'pg/mL' },
+  { path: 'labs.ast', min: 1, max: 15000, hard: true, label: 'AST', unit: 'U/L' },
+  { path: 'labs.alt', min: 1, max: 15000, hard: true, label: 'ALT', unit: 'U/L' },
+  { path: 'labs.trop', min: 0, max: 200000, hard: true, label: 'Troponin', unit: 'ng/L' },
+  { path: 'demographics.packYears', min: 0, max: 200, hard: true, label: 'Pack-years', unit: 'pack-years' },
   // soft: unusual but possible
   { path: 'labs.k', min: 3, max: 6, label: 'Potassium', unit: 'mmol/L' },
   { path: 'clinical.sbp', min: 70, max: 220, label: 'Systolic BP', unit: 'mmHg' },
   { path: 'clinical.hr', min: 35, max: 160, label: 'Heart rate', unit: 'bpm' },
   { path: 'labs.na', min: 125, max: 150, label: 'Sodium', unit: 'mmol/L' },
+  { path: 'labs.ast', min: 5, max: 400, label: 'AST', unit: 'U/L' },
+  { path: 'labs.alt', min: 5, max: 400, label: 'ALT', unit: 'U/L' },
+  { path: 'demographics.packYears', min: 0, max: 120, label: 'Pack-years', unit: 'pack-years' },
 ];
 export const VISIT_RANGE_RULES = [
   { path: 'sbp', min: 50, max: 260, hard: true, label: 'Systolic BP' },
@@ -373,7 +384,7 @@ export function dateIssues(patient, today) {
 }
 
 // ---------- completeness ----------
-// Required baseline fields. A field also counts as complete when it is marked "not done" or "unknown".
+// Required baseline fields. A field also counts as complete when it is marked "not reported" or "unknown".
 export function requiredFields(patient) {
   const f = [
     'enrollment.visitDate', 'enrollment.enrollmentDate', 'enrollment.consentDate',
@@ -406,7 +417,7 @@ export function completeness(patient) {
 export function completionBlockers(patient, targets, today) {
   const out = [];
   const c = completeness(patient);
-  if (c.missing.length) out.push(...c.missing.map(p => ({ path: p, msg: 'Required field is empty (fill it, or mark it not done / unknown).' })));
+  if (c.missing.length) out.push(...c.missing.map(p => ({ path: p, msg: 'Required field is empty (fill it, or mark it not reported / unknown).' })));
   for (const i of [...rangeIssues(patient), ...dateIssues(patient, today)]) if (i.level === 'error') out.push(i);
   const meds = patient.baselineMeds || [];
   const need = gdmtNeedsReason(meds, targets, patient.demographics?.weight);
@@ -429,7 +440,7 @@ export const EXCLUSION = [
   { k: 'acuteMI', label: 'Acute myocardial infarction as the primary cause' },
   { k: 'survival', label: 'Expected survival under 30 days due to a non-cardiac condition' },
   { k: 'unable', label: 'Unable to consent or to complete follow-up' },
-  { k: 'previous', label: 'Previously enrolled in Jo-CHF' },
+  { k: 'previous', label: 'Previously enrolled in JoPal-CHF' },
 ];
 export function eligibility(enr) {
   const inc = enr?.inclusion || {}, exc = enr?.exclusion || {};

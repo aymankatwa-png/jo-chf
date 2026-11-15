@@ -105,7 +105,7 @@ function mountShell() {
   <div class="session-bar" aria-hidden="true"><i id="sessbar" style="transform:scaleX(0)"></i></div>
   <div class="shell">
     <aside class="rail" aria-label="Main navigation">
-      <a class="brand" href="#/dashboard"><span class="brand-mark">${ECG_MARK}</span><span><div class="brand-name">Jo-CHF</div><div class="brand-sub">Heart Failure Registry</div></span></a>
+      <a class="brand" href="#/dashboard"><span class="brand-mark">${ECG_MARK}</span><span><div class="brand-name">JoPal-CHF</div><div class="brand-sub">Heart Failure Registry</div></span></a>
       <nav class="nav">${items.map(link).join('')}
         ${admin.length ? `<div class="nav-group">Study administration</div>${admin.map(link).join('')}` : ''}
         <div class="nav-group">Help</div>
@@ -154,7 +154,7 @@ function markNav(name, m) {
 function setCrumbs(list) {
   const el = document.getElementById('crumbs'); if (!el) return;
   el.innerHTML = list.map((c, i) => i < list.length - 1 && c.href ? `<a href="${c.href}">${esc(c.label)}</a><span class="sep">/</span>` : `<span class="here">${esc(c.label)}</span>`).join('');
-  document.title = (list[list.length - 1]?.label ? list[list.length - 1].label + ' · ' : '') + 'Jo-CHF Registry';
+  document.title = (list[list.length - 1]?.label ? list[list.length - 1].label + ' · ' : '') + 'JoPal-CHF Registry';
 }
 
 async function refreshCounts() {

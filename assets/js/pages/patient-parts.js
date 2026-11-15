@@ -3,7 +3,7 @@
 import { esc, icon, attr } from '../ui/dom.js';
 import { CHECK, dateInput } from '../ui/fields.js';
 import * as L from '../core/logic.js';
-import { COMORBIDITIES, REASONS, FREQS, KCCQ_FORM, DEVICES, DEVICE_STATUS, YNU } from '../core/schema.js';
+import { COMORBIDITIES, reasonsFor, FREQS, KCCQ_FORM, DEVICES, DEVICE_STATUS, YNU } from '../core/schema.js';
 
 const sel = (k, opts, v, ro, ph = 'Choose…') => `<select class="input" data-k="${k}" data-t="select"${attr('disabled', ro)}><option value="">${ph}</option>${opts.map(([a, b]) => `<option value="${esc(a)}"${a === v ? ' selected' : ''}>${esc(b)}</option>`).join('')}</select>`;
 const seg = (k, opts, v, ro) => `<div class="seg">${opts.map(([a, b]) => `<button type="button" data-k="${k}" data-t="seg" data-v="${esc(a)}" aria-pressed="${a === v}"${attr('disabled', ro)}>${esc(b)}</button>`).join('')}</div>`;
@@ -45,6 +45,7 @@ export function medsSection(sec, rec, ctx) {
       const pct = daily != null && tgt ? Math.round(100 * daily / tgt) : null;
       return `<div class="med-row">
         <div class="field"><span class="lbl tiny muted">Drug</span><select class="input" data-k="${sec.path}.${i}.drug" data-t="select"${attr('disabled', ro)}>${drugs.map(d => `<option${d.drug === m.drug ? ' selected' : ''}>${esc(d.drug)}</option>`).join('')}</select></div>
+        <div class="field"><span class="lbl tiny muted">Commercial name</span>${txt(`${sec.path}.${i}.brand`, m.brand, ro, 'Brand name')}</div>
         <div class="field"><span class="lbl tiny muted">Dose each time</span>${numIn(`${sec.path}.${i}.dose`, m.dose, ro, 'mg')}</div>
         <div class="field"><span class="lbl tiny muted">How often</span>${sel(`${sec.path}.${i}.freq`, FREQS, m.freq, ro, 'Frequency')}</div>
         <div class="dose-meter"><div class="bar"><i class="${pct >= 100 ? 'ok' : ''}" style="width:${Math.min(100, pct || 0)}%"></i></div>
@@ -60,7 +61,7 @@ export function medsSection(sec, rec, ctx) {
       </div>
       ${rows}
       ${needs ? `<div class="reasons${(reasons[g] || []).length ? ' ok' : ''}"><span class="lbl">${s.per[g] ? 'Why is the dose below target?' : 'Why is it not prescribed?'} (choose one or more)</span>
-        ${multi(`${sec.reasons}.${g}`, REASONS, reasons[g], ro)}
+        ${multi(`${sec.reasons}.${g}`, reasonsFor(g), reasons[g], ro)}
         ${(reasons[g] || []).some(r => r === 'other' || r === 'intolerance') ? `<div style="margin-top:8px">${txt(`${sec.reasons}Text.${g}`, L.getPath(rec, `${sec.reasons}Text.${g}`), ro, 'Specify (side effect or other reason)')}</div>` : ''}
       </div>` : ''}
     </div>`;
@@ -95,7 +96,7 @@ export function drugGroupSection(sec, rec, ro) {
     const v = base[it.k] || {};
     return `<div class="dev-row">
       <label class="chip-check" style="justify-self:start"><input type="checkbox" data-k="${sec.path}.${it.k}.on" data-t="check"${v.on ? ' checked' : ''}${attr('disabled', ro)}><span class="box">${CHECK}</span>${esc(it.label)}</label>
-      <div>${v.on && it.drugs ? sel(`${sec.path}.${it.k}.drug`, it.drugs.map(d => [d, d]), v.drug, ro, 'Which drug?') : ''}</div>
+      <div class="dg-names">${v.on && it.drugs ? sel(`${sec.path}.${it.k}.drug`, it.drugs.map(d => [d, d]), v.drug, ro, 'Which drug?') : ''}${v.on ? txt(`${sec.path}.${it.k}.brand`, v.brand, ro, 'Commercial name') : ''}</div>
       <div>${v.on && (it.dose || it.k === 'loop') ? txt(`${sec.path}.${it.k}.dose`, v.dose, ro, 'Dose (e.g. 40 mg daily)') : v.on ? txt(`${sec.path}.${it.k}.note`, v.note, ro, 'Note') : ''}</div>
     </div>`;
   }).join('');

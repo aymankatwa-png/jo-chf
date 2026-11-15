@@ -1,6 +1,6 @@
-# Jo-CHF · Jordan Contemporary Heart Failure Registry
+# JoPal-CHF · Jordan and Palestine Contemporary Heart Failure Registry
 
-Electronic data capture and live analytics for **Jo-CHF**, a prospective multicenter registry of about 1,000 adults with heart failure across 10–20 centers in Jordan, followed at 30 days, 6 months and 12 months (ESC 2026 classification).
+Electronic data capture and live analytics for **JoPal-CHF**, a prospective multicenter registry of about 1,000 adults with heart failure across 10–20 centers in Jordan, followed at 30 days, 6 months and 12 months (ESC 2026 classification).
 
 - **Open the registry:** https://aymankatwa-png.github.io/jo-chf/
 - **User guide for doctors:** https://aymankatwa-png.github.io/jo-chf/guide/
@@ -13,7 +13,7 @@ Electronic data capture and live analytics for **Jo-CHF**, a prospective multice
 | Area | Features |
 |---|---|
 | Accounts | Sign-in with email or numeric ID · registration requests approved by administrators · hashed passwords (PBKDF2-SHA256) · 30-minute idle sign-out · lock after 5 failed attempts · optional two-step verification (authenticator app) · temporary passwords and email reset |
-| Roles | Administrators see all centers, de-identified · site investigators see their own center in full and other centers as summary cards only |
+| Roles | Administrators see all centers, de-identified · site investigators see only their own center |
 | Dashboard | Registry total vs 1,000 · enrollment "rhythm strip" · one card per center: recruitment vs target, 30-day / 6-month / 12-month follow-up completion, data completeness, overdue visits |
 | Center page | Searchable, sortable patient list · follow-ups due (opening, open, missed) · open data queries |
 | Patient record | Every section of the protocol in tabs · automatic Study ID · consent and eligibility gate · duplicate check without revealing the other record · DD/MM/YYYY dates · lab unit conversion · automatic age, BMI, eGFR (CKD-EPI 2021), phenotype, QRS category, KCCQ-12 domain scores · "not done / unknown" for required fields · autosave + offline drafts |
@@ -82,4 +82,4 @@ Deployment: see **[SETUP.md](SETUP.md)**.
 - Confirm follow-up window start for inpatients (enrollment or discharge) in *Study settings*.
 
 ---
-Built for the Jo-CHF study team. All demo patients are invented.
+Built for the JoPal-CHF study team. All demo patients are invented.
